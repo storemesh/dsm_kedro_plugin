@@ -1,0 +1,7 @@
+{{ catalog_name }}:
+  type: custom_dataset.dsm_dataset.DsmSQLDataNode
+  folder_id: {{ folder_id }}
+  file_name: {{ file_name }}
+  credentials: dsmlibrary
+
+

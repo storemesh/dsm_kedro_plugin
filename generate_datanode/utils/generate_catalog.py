@@ -1,0 +1,210 @@
+from dsmlibrary.datanode import DataNode, DatabaseManagement
+from jinja2 import Environment, FileSystemLoader, BaseLoader
+from sqlalchemy import sql
+import datetime as dt
+import os
+import pandas as pd
+import dask.dataframe as dd
+import time 
+import inspect
+import tempfile
+from importlib import util
+import importlib.machinery
+
+from .utils import find_system_detail, camel_case, find_pk_column, get_numpy_schema, get_database_schema, md5hash, get_env_var, create_file_if_not_exist
+from config.config_project_path import KEDRO_PROJECT_BASE, KEDRO_PROJECT_NAME
+
+
+
+JINJA_PATH = os.path.join(KEDRO_PROJECT_BASE, 'src/generate_datanode/jinja_template')
+
+def generate_sql_datanode(source_table, sql_datanode_folder_id, token, write_mode=False):
+    if write_mode:
+        sql_datanode_catalog_path = os.path.join(KEDRO_PROJECT_BASE, 'conf/base/catalogs/generated/catalog_01_sql_datanode.yml')
+        with open(sql_datanode_catalog_path, 'w') as f:
+            f.write('')
+
+    database = DatabaseManagement(token=token)
+    for database_id, table_list in source_table.items():
+        # exec to define class object         
+        table_id = get_database_schema(database_id)
+        meta, schema = database.get_table_schema(table_id=table_id) # get_database_schema(database_id)
+        exec(schema, globals())
+        
+        for table_name in table_list:
+            database_name = find_system_detail(database_id)
+            database_name = database_name.replace(' ', '_')
+            catalog_name = f'SQLDataNode___{database_id:02d}___{database_name}___{table_name}'
+            camel_case_table_name = camel_case(table_name)   
+
+            # get query function
+            query_template = f'''
+def query():
+    return sql.select(['*']).select_from({camel_case_table_name})
+'''  
+            
+            table_class_obj = eval(camel_case_table_name)
+            meta, pk_column = get_numpy_schema(table_class_obj)   
+
+            database.write_sql_query(
+                # df=ddf,
+                query_function=query_template,
+                directory_id=sql_datanode_folder_id[database_id], 
+                table_id=table_id, 
+                pk_column=pk_column, 
+                name=table_name, 
+                meta=meta,
+                replace=True
+            )
+
+            data = {
+                'catalog_name': catalog_name,
+                'file_name': table_name,
+                'folder_id': sql_datanode_folder_id[database_id],
+            }
+            if write_mode:
+                env_node = Environment(loader=FileSystemLoader(JINJA_PATH))  
+                template = env_node.get_template(f'sql_datanode.yml')           
+                with open(sql_datanode_catalog_path, 'a') as f:
+                    f.write(template.render(data))
+
+# Landing
+def generate_landing_pipeline(
+        source_table, 
+        sql_datanode_folder_id, 
+        landing_folder_id, 
+        project_path, 
+        token, 
+        write_mode=True,
+        overwrite_exist_node=False,
+        generate_source_dict=None
+    ):
+    if write_mode:
+
+        env_node = Environment(loader=FileSystemLoader(JINJA_PATH))
+
+        landing_catalog_path = os.path.join(KEDRO_PROJECT_BASE, 'conf/base/catalogs/generated/catalog_02_landing.yml')
+        with open(landing_catalog_path, 'w') as f:
+            f.write('')
+
+        landing_node_path = os.path.join(project_path, 'pipelines/generate_change_landing/nodes.py')
+        template = env_node.get_template(f'landing_nodes.py')     
+        with open(landing_node_path, 'w') as f:
+            f.write(template.render({}))
+
+        landing_pipeline_path = os.path.join(project_path, 'pipelines/generate_change_landing/pipeline.py')
+        with open(landing_pipeline_path, 'w') as f:
+            f.write('')
+
+        # update_latest_landing
+        update_latest_landing_node_path = os.path.join(project_path, 'pipelines/update_latest_landing/nodes.py')
+        template = env_node.get_template(f'landing_nodes.py')     
+        with open(update_latest_landing_node_path, 'w') as f:
+            f.write(template.render({}))
+
+        update_latest_landing_pipeline_path = os.path.join(project_path, 'pipelines/update_latest_landing/pipeline.py')
+        with open(update_latest_landing_pipeline_path, 'w') as f:
+            f.write('')
+
+    node_list = []
+    data_node = DataNode(token)
+
+    
+    for database_id, table_list in source_table.items():
+        for table_name in table_list:     
+            check_generate_file = True     
+            if generate_source_dict != None:
+                if (not database_id in generate_source_dict) or (not table_name in generate_source_dict[database_id]):
+                    check_generate_file = False
+
+            database_name = find_system_detail(database_id)
+            database_name = database_name.replace(' ', '_')
+            sql_query_catalog_name = f'SQLDataNode___{database_id:02d}___{database_name}___{table_name}'
+            landing_latest_catalog_name = f'landing___{database_name}___{table_name}___latest'
+            landing_temp_catalog_name = f'landing___{database_name}___{table_name}___temp'
+            landing_change_catalog_name = f'landing___{database_name}___{table_name}___change'
+            print(landing_latest_catalog_name)
+
+            # allocate file id (if not exist)
+            # if check_generate_file:
+            landing_latest_file_id = create_file_if_not_exist(
+                file_name=table_name, 
+                directory_id=landing_folder_id[database_id]['latest'],
+                data_node=data_node,
+                overwrite_exist_node=overwrite_exist_node,
+
+            )
+            landing_temp_file_id = create_file_if_not_exist(
+                file_name=table_name, 
+                directory_id=landing_folder_id[database_id]['temp'],
+                data_node=data_node,
+                overwrite_exist_node=overwrite_exist_node,
+            )
+            landing_change_file_id = create_file_if_not_exist(
+                file_name=table_name, 
+                directory_id=landing_folder_id[database_id]['change'],
+                data_node=data_node,
+                overwrite_exist_node=overwrite_exist_node,
+            )
+           
+            data = {
+                'file_name': table_name,
+                'sql_query_catalog_name': sql_query_catalog_name,
+                'landing_latest_catalog_name': landing_latest_catalog_name,
+                'landing_temp_catalog_name': landing_temp_catalog_name,
+                'landing_change_catalog_name': landing_change_catalog_name,
+                'folder_id': landing_folder_id[database_id],
+                'database_name': database_name,
+                'landing_latest_file_id': landing_latest_file_id,
+                'landing_temp_file_id': landing_temp_file_id,
+                'landing_change_file_id': landing_change_file_id,                
+            }
+            node_list.append(data)
+
+    if write_mode:                  
+        template = env_node.get_template(f'landing_catalog.yml')           
+        with open(landing_catalog_path, 'a') as f:
+            f.write(template.render({ "node_list": node_list}))                
+
+        template = env_node.get_template(f'landing_pipeline.py')     
+        with open(landing_pipeline_path, 'w') as f:
+            f.write(template.render({ "node_list": node_list}))
+
+        template = env_node.get_template(f'landing_pipeline_move.py')     
+        with open(update_latest_landing_pipeline_path, 'w') as f:
+            f.write(template.render({ "node_list": node_list}))
+
+
+# integration
+def generate_integration_catalogs(integration_table, integration_folder_id, token, append=False):  
+    integration_catalog_path = os.path.join(KEDRO_PROJECT_BASE, 'conf/base/catalogs/generated/catalog_03_integration.yml')
+    with open(integration_catalog_path, 'w') as f:
+        f.write('')    
+
+    node_list = []
+    data_node = DataNode(token)
+    for table_name, config in integration_table.items():  
+        catalog_name = f'integration___{table_name}'
+        integraton_file_id = create_file_if_not_exist(
+            file_name=table_name, 
+            directory_id=integration_folder_id,
+            data_node=data_node
+        )
+        data = {
+            'catalog_name': catalog_name,
+            'file_name': table_name,            
+            'folder_id': integration_folder_id,
+            'file_id': integraton_file_id,
+            'config': config,
+        }
+        node_list.append(data)
+
+    env_node = Environment(loader=FileSystemLoader(JINJA_PATH))  
+    if append:
+        template_name = 'datanode_append.yml'
+    else:
+        template_name = 'datanode.yml'
+        
+    template = env_node.get_template(template_name)           
+    with open(integration_catalog_path, 'a') as f:
+        f.write(template.render({ "node_list": node_list}))

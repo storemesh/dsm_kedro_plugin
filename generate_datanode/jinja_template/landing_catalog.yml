@@ -1,0 +1,23 @@
+{% for node in node_list -%}
+##  {{ node.landing_latest_catalog_name }}
+{{ node.landing_latest_file_id }}___{{ node.landing_latest_catalog_name }}:
+  type: custom_dataset.dsm_dataset.DsmDataNode
+  folder_id: {{ node.folder_id.latest }}
+  file_name: {{ node.file_name }}
+  credentials: dsmlibrary
+
+{{ node.landing_temp_file_id }}___{{ node.landing_temp_catalog_name }}:
+  type: custom_dataset.dsm_dataset.DsmDataNode
+  folder_id: {{ node.folder_id.temp }}
+  file_name: {{ node.file_name }}
+  credentials: dsmlibrary
+
+{{ node.landing_change_file_id }}___{{ node.landing_change_catalog_name }}:
+  type: custom_dataset.dsm_dataset.DsmDataNode
+  folder_id: {{ node.folder_id.change }}
+  file_name: {{ node.file_name }}
+  credentials: dsmlibrary
+
+{% endfor %}
+
+

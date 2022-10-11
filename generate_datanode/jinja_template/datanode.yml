@@ -1,0 +1,11 @@
+{% for node in node_list -%}
+{{ node.file_id }}___{{ node.catalog_name }}:
+  type: custom_dataset.dsm_dataset.DsmDataNode
+  folder_id: {{ node.folder_id }}
+  file_name: {{ node.file_name }}
+  credentials: dsmlibrary
+  {% if node.config != None %}config: {{ node.config }}{% endif %}  
+    
+{% endfor %}
+
+
