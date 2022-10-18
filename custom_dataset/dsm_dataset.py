@@ -7,6 +7,7 @@ import os
 from kedro.io import AbstractDataSet
 import dask
 import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
 import pandas as pd
 from dsmlibrary.datanode import DataNode, DatabaseManagement
 from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean
@@ -14,6 +15,7 @@ from sqlalchemy import sql
 from datetime import date
 import datetime
 import time
+
 
 from .validation.validation_schema import validate_data, ValidationException
 # from src.generate_datanode.utils.utils import write_dummy_file
@@ -111,7 +113,9 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         else:
             n_original_row = dask.compute(ddf.shape[0])[0]
 
-        data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+        with ProgressBar():
+            data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+
        
         end_time = datetime.datetime.now()
         logs = {
