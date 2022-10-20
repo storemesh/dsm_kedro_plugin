@@ -47,7 +47,7 @@ def query():
                 directory_id=sql_datanode_folder_id[database_id], 
                 table_id=table_id, 
                 pk_column=pk_column, 
-                name=table_name, 
+                name=catalog_name, 
                 meta=meta,
                 replace=True
             )
@@ -68,7 +68,7 @@ def generate_landing_pipeline(
         source_table, 
         sql_datanode_folder_id, 
         landing_folder_id, 
-        project_path, 
+        query_landing_pipeline_path, 
         token, 
         write_mode=True,
         overwrite_exist_node=False,
@@ -81,24 +81,24 @@ def generate_landing_pipeline(
         with open(LANDING_CATALOG_PATH, 'w') as f:
             f.write('')
 
-        landing_node_path = os.path.join(project_path, 'pipelines/generate_change_landing/nodes.py')
+        landing_node_path = os.path.join(query_landing_pipeline_path, 'nodes.py')
         template = env_node.get_template(f'landing_nodes.py')     
         with open(landing_node_path, 'w') as f:
             f.write(template.render({}))
 
-        landing_pipeline_path = os.path.join(project_path, 'pipelines/generate_change_landing/pipeline.py')
+        landing_pipeline_path = os.path.join(query_landing_pipeline_path, 'pipeline.py')
         with open(landing_pipeline_path, 'w') as f:
             f.write('')
 
-        # update_latest_landing
-        update_latest_landing_node_path = os.path.join(project_path, 'pipelines/update_latest_landing/nodes.py')
-        template = env_node.get_template(f'landing_nodes.py')     
-        with open(update_latest_landing_node_path, 'w') as f:
-            f.write(template.render({}))
+#         # update_latest_landing
+#         update_latest_landing_node_path = os.path.join(project_path, 'pipelines/update_latest_landing/nodes.py')
+#         template = env_node.get_template(f'landing_nodes.py')     
+#         with open(update_latest_landing_node_path, 'w') as f:
+#             f.write(template.render({}))
 
-        update_latest_landing_pipeline_path = os.path.join(project_path, 'pipelines/update_latest_landing/pipeline.py')
-        with open(update_latest_landing_pipeline_path, 'w') as f:
-            f.write('')
+#         update_latest_landing_pipeline_path = os.path.join(project_path, 'pipelines/update_latest_landing/pipeline.py')
+#         with open(update_latest_landing_pipeline_path, 'w') as f:
+#             f.write('')
 
     node_list = []
     data_node = DataNode(token)
@@ -113,45 +113,48 @@ def generate_landing_pipeline(
 
             database_name = find_system_detail(database_id)
             database_name = database_name.replace(' ', '_')
-            sql_query_catalog_name = f'SQLDataNode___{database_id:02d}___{database_name}___{table_name}'
-            landing_latest_catalog_name = f'landing___{database_name}___{table_name}___latest'
-            landing_temp_catalog_name = f'landing___{database_name}___{table_name}___temp'
-            landing_change_catalog_name = f'landing___{database_name}___{table_name}___change'
-            print(landing_latest_catalog_name)
+            sql_query_catalog_name = f'SQLDataNode___{database_name}___{table_name}'
+            landing_catalog_name = f'landing___{database_name}___{table_name}'
+            # landing_latest_catalog_name = f'landing___{database_name}___{table_name}___latest'
+            # landing_temp_catalog_name = f'landing___{database_name}___{table_name}___temp'
+            # landing_change_catalog_name = f'landing___{database_name}___{table_name}___change'
+            print(landing_catalog_name)
 
             # allocate file id (if not exist)
             # if check_generate_file:
-            landing_latest_file_id = create_file_if_not_exist(
-                file_name=table_name, 
-                directory_id=landing_folder_id[database_id]['latest'],
-                data_node=data_node,
-                overwrite_exist_node=overwrite_exist_node,
+#             landing_file_id = create_file_if_not_exist(
+#                 file_name=table_name, 
+#                 directory_id=landing_folder_id[database_id],
+#                 data_node=data_node,
+#                 overwrite_exist_node=overwrite_exist_node,
 
-            )
-            landing_temp_file_id = create_file_if_not_exist(
-                file_name=table_name, 
-                directory_id=landing_folder_id[database_id]['temp'],
-                data_node=data_node,
-                overwrite_exist_node=overwrite_exist_node,
-            )
-            landing_change_file_id = create_file_if_not_exist(
-                file_name=table_name, 
-                directory_id=landing_folder_id[database_id]['change'],
-                data_node=data_node,
-                overwrite_exist_node=overwrite_exist_node,
-            )
+#             )
+            # landing_temp_file_id = create_file_if_not_exist(
+            #     file_name=table_name, 
+            #     directory_id=landing_folder_id[database_id]['temp'],
+            #     data_node=data_node,
+            #     overwrite_exist_node=overwrite_exist_node,
+            # )
+            # landing_change_file_id = create_file_if_not_exist(
+            #     file_name=table_name, 
+            #     directory_id=landing_folder_id[database_id]['change'],
+            #     data_node=data_node,
+            #     overwrite_exist_node=overwrite_exist_node,
+            # )
            
             data = {
                 'file_name': table_name,
                 'sql_query_catalog_name': sql_query_catalog_name,
-                'landing_latest_catalog_name': landing_latest_catalog_name,
-                'landing_temp_catalog_name': landing_temp_catalog_name,
-                'landing_change_catalog_name': landing_change_catalog_name,
+                'landing_catalog_name': landing_catalog_name,
+                # 'landing_latest_catalog_name': landing_latest_catalog_name,
+                # 'landing_temp_catalog_name': landing_temp_catalog_name,
+                # 'landing_change_catalog_name': landing_change_catalog_name,
                 'folder_id': landing_folder_id[database_id],
                 'database_name': database_name,
-                'landing_latest_file_id': landing_latest_file_id,
-                'landing_temp_file_id': landing_temp_file_id,
-                'landing_change_file_id': landing_change_file_id,                
+                # 'landing_file_id': landing_file_id,
+                # 'landing_latest_file_id': landing_latest_file_id,
+                # 'landing_temp_file_id': landing_temp_file_id,
+                # 'landing_change_file_id': landing_change_file_id,                
             }
             node_list.append(data)
 
@@ -164,9 +167,9 @@ def generate_landing_pipeline(
         with open(landing_pipeline_path, 'w') as f:
             f.write(template.render({ "node_list": node_list}))
 
-        template = env_node.get_template(f'landing_pipeline_move.py')     
-        with open(update_latest_landing_pipeline_path, 'w') as f:
-            f.write(template.render({ "node_list": node_list}))
+        # template = env_node.get_template(f'landing_pipeline_move.py')     
+        # with open(update_latest_landing_pipeline_path, 'w') as f:
+        #     f.write(template.render({ "node_list": node_list}))
 
 
 # integration
@@ -178,11 +181,11 @@ def generate_integration_catalogs(integration_table, integration_folder_id, toke
     data_node = DataNode(token)
     for table_name, config in integration_table.items():  
         catalog_name = f'integration___{table_name}'
-        integraton_file_id = create_file_if_not_exist(
-            file_name=table_name, 
-            directory_id=integration_folder_id,
-            data_node=data_node
-        )
+        # integraton_file_id = create_file_if_not_exist(
+        #     file_name=catalog_name, 
+        #     directory_id=integration_folder_id,
+        #     data_node=data_node
+        # )
         data = {
             'catalog_name': catalog_name,
             'file_name': table_name,            
