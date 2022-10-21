@@ -118,16 +118,16 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
        
-        end_time = datetime.datetime.now()
-        logs = {
-            'file_id': file_id,
-            'start_time': start_time,
-            'end_time': end_time,    
-            'total': n_original_row,     
-        }
-        df_task_logs = pd.DataFrame([logs])
-        path_save = f'logs/task_logs/task_logs.csv'
-        df_task_logs.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+        # end_time = datetime.datetime.now()
+        # logs = {
+        #     'file_id': file_id,
+        #     'start_time': start_time,
+        #     'end_time': end_time,    
+        #     'total': n_original_row,     
+        # }
+        # df_task_logs = pd.DataFrame([logs])
+        # path_save = f'logs/task_logs/task_logs.csv'
+        # df_task_logs.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
 
         # else:
         #     raise Exception('For saving, folder_id and file_name parameter need to be specificed')
