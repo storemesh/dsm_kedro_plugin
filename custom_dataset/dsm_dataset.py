@@ -48,27 +48,37 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self._file_id = file_id
         self._folder_id = folder_id
         self._file_name = file_name
-        self._config = config                   
+        self._config = config           
+        
+        self.meta = {
+            "file_id": file_id,
+            "folder_id": folder_id,
+            "file_name": file_name,
+            "config": config,
+        }
         
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = DataNode(self._token)
-        if self._file_id:
-            file_id = self._file_id
-        else:
-            try:
-                file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-            except Exception as e:
-                print("    Exception:", e)
-                return None
+        # if self._file_id:
+        #     file_id = self._file_id
+        # else:
+        #     try:
+        #         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        #     except Exception as e:
+        #         print("    Exception:", e)
+        #         return None
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         
-        ddf = data_node.read_ddf(file_id=file_id)       
+        ddf = data_node.read_ddf(file_id=file_id)
+        self.meta['file_id'] = file_id
         
-        return (ddf, file_id)
+        return (ddf, self.meta)
 
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
         start_time = datetime.datetime.now()
-        ddf, lineage_list = data
-
+        ddf, meta_list = data
+        lineage_list = [ item['file_id'] for item in meta_list]
+        
         data_node = DataNode(self._token)
         # import pdb; pdb.set_trace()
         file_id = None
@@ -140,21 +150,19 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 class DsmListDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = DataNode(self._token)
-        if self._file_id:
-            file_id = self._file_id
-        else:
-            try:
-                file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
-            except Exception as e:
-                print("    Exception:", e)
-                return None
+        # try:
+        #     file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
+        # except Exception as e:
+        #     print("    Exception:", e)
+        file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
         
         ddf = data_node.get_update_data(file_id=file_id)       
-        
-        return (ddf, file_id)
+        self.meta['file_id'] = file_id
+        return (ddf, self.meta)
     
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
-        ddf, lineage_list = data
+        ddf, meta_list = data
+        lineage_list = [ item['file_id'] for item in meta_list]
 
         data_node = DataNode(self._token)
         # import pdb; pdb.set_trace()
