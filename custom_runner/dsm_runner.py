@@ -12,10 +12,15 @@ from kedro.io import AbstractDataSet, DataCatalog, MemoryDataSet
 from kedro.pipeline import Pipeline
 from kedro.runner.runner import AbstractRunner, run_node
 
+import git
+import inspect
+import traceback
+from datetime import datetime
+
 from etl_pipeline.pipeline_registry import register_pipelines
 from config.config_source_table import PROJECT_NAME
 
-import git
+
 
 class DsmRunner(AbstractRunner):
     """``SequentialRunner`` is an ``AbstractRunner`` implementation. It can
@@ -80,6 +85,8 @@ class DsmRunner(AbstractRunner):
             if output_dataset_names == value.all_outputs():
                 pipeline_name = key
                 break
+        
+        
                 
         
         repo = git.Repo(search_parent_directories=True)
@@ -101,17 +108,51 @@ class DsmRunner(AbstractRunner):
             
             
         
-        import pdb;pdb.set_trace()
+        # import pdb;pdb.set_trace()
 
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
+        
+        func_log_list = {}
+        monad_log_list = {}
 
         for exec_index, node in enumerate(nodes):
+            start_time = datetime.now()
+            
+            is_success = True
+            error_log = None
             try:
                 run_node(node, catalog, hook_manager, self._is_async, session_id)
                 done_nodes.add(node)
             except Exception:
+                is_success = False
                 self._suggest_resume_scenario(pipeline, done_nodes, catalog)
+                
+#                 print('-------------------------------')
+                error_log = traceback.format_exc()
+                # import pdb;pdb.set_trace()
+                # print(self._suggest_resume_scenario(pipeline, done_nodes, catalog))
                 raise
+                
+            ##### function log
+            # import pdb;pdb.set_trace()
+            end_time = datetime.now()
+            delta = end_time - start_time
+            print('Difference is:', delta)
+
+            
+            func_log_list[node.name] = {
+                "func_id": node.name,
+                "name": node.name,
+                "type": 'Dask',
+                "start": start_time,
+                "end": end_time,
+                "duration": str(delta),
+                "is_success": is_success,
+                "log_url": error_log,
+            }
+            #####
+            
+            
 
             # decrement load counts and release any data sets we've finished with
             for data_set in node.inputs:
@@ -129,15 +170,41 @@ class DsmRunner(AbstractRunner):
         ## data nodes detail
         
         dataset_name_list = list(pipeline.data_sets())        
-        data_nodes = {}
-        import pdb;pdb.set_trace()
+        datanode_detail = {}
+        
         for dataset_name in dataset_name_list:
             _, dataset_meta = catalog.load(dataset_name)
             
-            data_nodes[dataset_name] = {
+            datanode_detail[dataset_name] = {
                 'id': dataset_name,
                 'file_id': dataset_meta['file_id'],
                 'meta': dataset_meta,
             }
+            
+            ##### monad log
+            monad_log_list[....] = {
+                "file_id": dataset_meta['file_id'],
+                "name": dataset_name,
+                "type": 'input',
+                "run_datetime": run_time,
+                "duration": str(delta),
+            }
+            #####
+            
+        ## function detail
+        functions_detail = {}
+        
+        for node in pipeline.nodes:
+            func_obj = node.func
+            func_source_code = inspect.getsource(func_obj)
+            
+            functions_detail[node.name] = {
+                'func_id': node.name,
+                'func_name': node.name,
+                'python_code': func_source_code,
+                'input_ids': node.inputs,
+                'output_ids': node.outputs,
+            }
+        
         
         print('ddd')
