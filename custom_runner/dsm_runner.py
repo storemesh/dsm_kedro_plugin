@@ -71,6 +71,8 @@ class DsmRunner(AbstractRunner):
         Raises:
             Exception: in case of any downstream node failure.
         """
+        start_run_time = datetime.now()
+        
         nodes = pipeline.nodes
         done_nodes = set()
         
@@ -88,32 +90,18 @@ class DsmRunner(AbstractRunner):
         
         
                 
-        
+        ## pipeline logs
         repo = git.Repo(search_parent_directories=True)
         branch = repo.active_branch
         branch_name = branch.name
         hexsha = repo.head.object.hexsha
-        
-        pipeline_logs = {
-            "name": pipeline_name,
-            "project": PROJECT_NAME,
-            "git": {
-                "hexsha": hexsha,
-                "branch_name": branch_name,
-            }
-        }
-        
-        
-        
-            
-            
+    
         
         # import pdb;pdb.set_trace()
 
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
         
         func_log_list = {}
-        monad_log_list = {}
 
         for exec_index, node in enumerate(nodes):
             start_time = datetime.now()
@@ -167,8 +155,7 @@ class DsmRunner(AbstractRunner):
                 "Completed %d out of %d tasks", exec_index + 1, len(nodes)
             )
             
-        ## data nodes detail
-        
+        ## data nodes detail        
         dataset_name_list = list(pipeline.data_sets())        
         datanode_detail = {}
         
@@ -181,20 +168,16 @@ class DsmRunner(AbstractRunner):
                 'meta': dataset_meta,
             }
             
-            ##### monad log
-            monad_log_list[....] = {
-                "file_id": dataset_meta['file_id'],
-                "name": dataset_name,
-                "type": 'input',
-                "run_datetime": run_time,
-                "duration": str(delta),
-            }
-            #####
             
-        ## function detail
-        functions_detail = {}
+        ## function detail, input_edges, output_edges, monad input and monad output
+        functions_detail = {}        
+        monad_log_list = {}
+        input_edges = []
+        output_edges = []
         
         for node in pipeline.nodes:
+            
+            ## function detail
             func_obj = node.func
             func_source_code = inspect.getsource(func_obj)
             
@@ -205,6 +188,69 @@ class DsmRunner(AbstractRunner):
                 'input_ids': node.inputs,
                 'output_ids': node.outputs,
             }
+            
+            ## input_edges & monad input
+            for dataset_name in list(node.inputs):
+                edge_id = f'{dataset_name}_____{node.name}'
+                
+                # input_edges
+                input_edges.append({
+                    'edge_id': edge_id,
+                    'source': dataset_name,
+                    'target': node.name,
+                })
+                
+                # monad input
+                monad_log_list[edge_id] = {
+                    'file_id': datanode_detail[dataset_name]['file_id'],
+                    'name': dataset_name,
+                    'type': 'input',
+                    'run_datetime': start_run_time,
+                    'format_summary': None,
+                    'consistency_summary': None,
+                    'completeness_summary': None,
+                }
+            
+            ## output_edges & monad output
+            for dataset_name in list(node.outputs):
+                edge_id = f'{node.name}_____{dataset_name}'
+                
+                # output_edges
+                output_edges.append({
+                    'edge_id': edge_id,
+                    'source': node.name,
+                    'target': dataset_name,
+                })
+                
+                # monad output
+                monad_log_list[edge_id] = {
+                    'file_id': datanode_detail[dataset_name]['file_id'],
+                    'name': dataset_name,
+                    'type': 'output',
+                    'run_datetime': start_run_time,
+                    'format_summary': None,
+                    'consistency_summary': None,
+                    'completeness_summary': None,
+                }
+                
         
+        output_dict = {
+            "pipeline": {
+                "name": pipeline_name,
+                "project": PROJECT_NAME,
+                "git": {
+                    "hexsha": hexsha,
+                    "branch_name": branch_name,
+                }
+            },
+            "datanodes": datanode_detail,
+            "functions": functions_detail,
+            "input_edges": input_edges,
+            "output_edges": output_edges,
+            "monad_log": monad_log_list,
+            "function_log": func_log_list,
+        }
+        print(output_dict)
+            
         
         print('ddd')
