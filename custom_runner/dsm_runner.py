@@ -16,11 +16,15 @@ import git
 import inspect
 import traceback
 from datetime import datetime
+import uuid
 import json
+import pandas as pd
+from dsmlibrary.datanode import DataNode
 
 from etl_pipeline.pipeline_registry import register_pipelines
 from config.config_source_table import PROJECT_NAME
 dsm_kedro_plugin = __import__("dsm-kedro-plugin")
+
 
 # from dsm-kedro-plugin.custom_dataset.validation.validation_rules import rules
 
@@ -78,12 +82,17 @@ class DsmRunner(AbstractRunner):
         
         LOG_FOLDER = 293
         validation_rules = dsm_kedro_plugin.custom_dataset.validation.validation_rules.rules   
-        import pdb; pdb.set_trace()
-        get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
-        token = get_token()
-        validation_rules = { value['func'].name: value for key, value in validation_rules.items() }
+        # dsm_kedro_plugin = __import__("dsm-kedro-plugin")
+        # import pdb; pdb.set_trace()
+        # get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
+        # token = get_token()
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY3MjY0MzM1LCJpYXQiOjE2NjcxNzc5MzUsImp0aSI6ImUxMWY4NWQxM2M4NjQ2ZDY5MjhkMjA4YzNlNTZkN2YxIiwidXNlcl9pZCI6MTV9.xIgAhoU_AVoZO7_kNugHs3WOR1b2rPrpwP8G9mfkKII"
+        datanode = DataNode(token)
+        val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in validation_rules.items() ]
+        df_val_types = pd.DataFrame(val_types)
         
-        start_run_time = datetime.now()
+        start_run_all = datetime.now()
+        is_run_all_success = True
         
         nodes = pipeline.nodes
         done_nodes = set()
@@ -128,6 +137,7 @@ class DsmRunner(AbstractRunner):
                 done_nodes.add(node)
             except Exception:
                 is_success = False
+                is_run_all_success = False
                 self._suggest_resume_scenario(pipeline, done_nodes, catalog)
                 
 #                 print('-------------------------------')
@@ -217,17 +227,12 @@ class DsmRunner(AbstractRunner):
                 
                 url_path = f"{LOG_FOLDER}/{datanode_detail[dataset_name]['file_id']}.parquet"
                 
-                
-                import pdb;pdb.set_trace()
-                
-                validation_rules
-                
                 # monad input
                 monad_log_list[edge_id] = {
                     'file_id': datanode_detail[dataset_name]['file_id'],
                     'name': dataset_name,
                     'type': 'read',
-                    'run_datetime': start_run_time,
+                    'run_datetime': start_run_all,
                     'format_summary': None,
                     'consistency_summary': None,
                     'completeness_summary': None,
@@ -245,15 +250,30 @@ class DsmRunner(AbstractRunner):
                     'target': dataset_name,
                 })
                 
+                file_id = datanode_detail[dataset_name]['file_id']
+                log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
+                url_path = f"{LOG_FOLDER}/{file_id}.parquet"
+                
+                # import pdb;pdb.set_trace()
+                
+                ddf = datanode.read_ddf(file_id=log_file_id)
+                
+                ddf_merge = ddf.merge(df_val_types, on='rule_name')
+                
+                df_type_count = ddf_merge.groupby(['rule_type'])['pk'].nunique().compute()
+                count_format = df_type_count['format'] if 'format' in df_type_count else 0
+                count_consistency = df_type_count['consistency'] if 'consistency' in df_type_count else 0
+                count_completeness = df_type_count['completeness'] if 'completeness' in df_type_count  else 0
+                
                 # monad output
                 monad_log_list[edge_id] = {
                     'file_id': datanode_detail[dataset_name]['file_id'],
                     'name': dataset_name,
                     'type': 'write',
-                    'run_datetime': start_run_time,
-                    'format_summary': None,
-                    'consistency_summary': None,
-                    'completeness_summary': None,
+                    'run_datetime': start_run_all,
+                    'format_summary': count_format,
+                    'consistency_summary': count_consistency,
+                    'completeness_summary': count_completeness,
                 }
                 
         
@@ -273,8 +293,35 @@ class DsmRunner(AbstractRunner):
             "monad_log": monad_log_list,
             "function_log": func_log_list,
         }
-        print(output_dict)
+        # print(output_dict)
         print(json.dumps(output_dict, indent=4, default=str))
+        
+        print('------------')
+        
+        # - uuid
+        # - start_time
+        # - end_time
+        # - status
+        # - pipeline_json_file
+        # - owner
+        # - project_name
+        # - pipeline_name
+        end_run_all = datetime.now()
+        run_all_result = {
+            'uuid': str(uuid.uuid4()),
+            'start_time': start_run_all,
+            'end_time': end_run_all,
+            'duration': str(end_run_all - start_run_all),
+            'status': True if is_run_all_success else False,
+            'pipeline_json_file': 'json_field',
+            'owner': 'get owner from token',
+            'project_name': PROJECT_NAME,
+            'pipeline_name': pipeline_name,
+        }
+        print(json.dumps(run_all_result, indent=4, default=str))
+        
+
+        
             
         
         print('ddd')

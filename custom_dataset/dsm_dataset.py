@@ -117,7 +117,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 # path_save = f'logs/validation_logs/{file_id}.csv'
                 # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
                 # import pdb;pdb.set_trace()
-                data_node.write(df=df_rule_error, directory=293, name=f"{file_id}", description="", replace=True, profiling=True, lineage=[file_id])
+                data_node.write(df=df_rule_error, directory=293, name=f"{file_id}_write", description="", replace=True, profiling=True, lineage=[file_id])
 
                 # remove error columns
                 pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
