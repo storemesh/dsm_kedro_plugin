@@ -16,9 +16,13 @@ import git
 import inspect
 import traceback
 from datetime import datetime
+import json
 
 from etl_pipeline.pipeline_registry import register_pipelines
 from config.config_source_table import PROJECT_NAME
+dsm_kedro_plugin = __import__("dsm-kedro-plugin")
+
+# from dsm-kedro-plugin.custom_dataset.validation.validation_rules import rules
 
 
 
@@ -71,6 +75,14 @@ class DsmRunner(AbstractRunner):
         Raises:
             Exception: in case of any downstream node failure.
         """
+        
+        LOG_FOLDER = 293
+        validation_rules = dsm_kedro_plugin.custom_dataset.validation.validation_rules.rules   
+        import pdb; pdb.set_trace()
+        get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
+        token = get_token()
+        validation_rules = { value['func'].name: value for key, value in validation_rules.items() }
+        
         start_run_time = datetime.now()
         
         nodes = pipeline.nodes
@@ -79,14 +91,18 @@ class DsmRunner(AbstractRunner):
         
         pipeline_detail = register_pipelines()
         
-        output_dataset_names = pipeline.all_outputs()
-        pipeline_detail['payment_integration'].all_outputs()
+        # import pdb; pdb.set_trace()
+        last_output_dataset_name = list(pipeline.all_outputs())[-1]
+        # pipeline_detail['payment_integration'].all_outputs()
+        # output_dataset_names
         
         pipeline_name = None
         for key, value in pipeline_detail.items():
-            if output_dataset_names == value.all_outputs():
+            
+            if last_output_dataset_name in list(value.all_outputs()):
                 pipeline_name = key
                 break
+        
         
         
                 
@@ -96,8 +112,7 @@ class DsmRunner(AbstractRunner):
         branch_name = branch.name
         hexsha = repo.head.object.hexsha
     
-        
-        # import pdb;pdb.set_trace()
+
 
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
         
@@ -136,7 +151,7 @@ class DsmRunner(AbstractRunner):
                 "end": end_time,
                 "duration": str(delta),
                 "is_success": is_success,
-                "log_url": error_log,
+                "log_error": error_log,
             }
             #####
             
@@ -200,15 +215,23 @@ class DsmRunner(AbstractRunner):
                     'target': node.name,
                 })
                 
+                url_path = f"{LOG_FOLDER}/{datanode_detail[dataset_name]['file_id']}.parquet"
+                
+                
+                import pdb;pdb.set_trace()
+                
+                validation_rules
+                
                 # monad input
                 monad_log_list[edge_id] = {
                     'file_id': datanode_detail[dataset_name]['file_id'],
                     'name': dataset_name,
-                    'type': 'input',
+                    'type': 'read',
                     'run_datetime': start_run_time,
                     'format_summary': None,
                     'consistency_summary': None,
                     'completeness_summary': None,
+                    'log_url': url_path,
                 }
             
             ## output_edges & monad output
@@ -226,7 +249,7 @@ class DsmRunner(AbstractRunner):
                 monad_log_list[edge_id] = {
                     'file_id': datanode_detail[dataset_name]['file_id'],
                     'name': dataset_name,
-                    'type': 'output',
+                    'type': 'write',
                     'run_datetime': start_run_time,
                     'format_summary': None,
                     'consistency_summary': None,
@@ -251,6 +274,7 @@ class DsmRunner(AbstractRunner):
             "function_log": func_log_list,
         }
         print(output_dict)
+        print(json.dumps(output_dict, indent=4, default=str))
             
         
         print('ddd')

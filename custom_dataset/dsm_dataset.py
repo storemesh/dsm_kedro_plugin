@@ -17,7 +17,7 @@ import datetime
 import time
 
 
-# from .validation.validation_schema import validate_data, ValidationException
+from .validation.validation_schema import validate_data, ValidationException
 # from src.generate_datanode.utils.utils import write_dummy_file
 
 def write_dummy_file(file_name, directory_id, data_node):
@@ -90,36 +90,38 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             write_dummy_file(self._file_name, self._folder_id, data_node)
 
         if self._config and file_id:            
-            pass
+            # pass
             
-#             ddf_critical_error, ddf_rule_error = validate_data(
-#                 ddf, 
-#                 config=self._config, 
-#                 file_id=file_id, 
-#                 start_time=start_time
-#             )
+            ddf_critical_error, ddf_rule_error = validate_data(
+                ddf, 
+                config=self._config, 
+                file_id=file_id, 
+                start_time=start_time
+            )
 
-#             df_critical_error, df_rule_error, n_original_row = dask.compute(
-#                 ddf_critical_error,
-#                 ddf_rule_error,
-#                 ddf.shape[0]
-#             )
+            df_critical_error, df_rule_error, n_original_row = dask.compute(
+                ddf_critical_error,
+                ddf_rule_error,
+                ddf.shape[0]
+            )
 
-#             if df_critical_error.shape[0] > 0:
-#                 columns = df_critical_error.columns
-#                 df_critical_error = df_critical_error.reset_index().drop(columns=['index'])
-#                 raise ValidationException(
-#                     f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
-#                     f"df_critical_error : \n{df_critical_error}"
-#                 )
+            if df_critical_error.shape[0] > 0:
+                columns = df_critical_error.columns
+                df_critical_error = df_critical_error.reset_index().drop(columns=['index'])
+                raise ValidationException(
+                    f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
+                    f"df_critical_error : \n{df_critical_error}"
+                )
             
-#             if df_rule_error.shape[0] > 0:
-#                 path_save = f'logs/validation_logs/{file_id}.csv'
-#                 df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+            if df_rule_error.shape[0] > 0:
+                # path_save = f'logs/validation_logs/{file_id}.csv'
+                # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+                # import pdb;pdb.set_trace()
+                data_node.write(df=df_rule_error, directory=293, name=f"{file_id}", description="", replace=True, profiling=True, lineage=[file_id])
 
-#                 # remove error columns
-#                 pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
-#                 ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
+                # remove error columns
+                pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
+                ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
 
         else:
             n_original_row = dask.compute(ddf.shape[0])[0]
