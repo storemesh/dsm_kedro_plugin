@@ -28,7 +28,30 @@ dsm_kedro_plugin = __import__("dsm-kedro-plugin")
 
 # from dsm-kedro-plugin.custom_dataset.validation.validation_rules import rules
 
+def parse_commit_log(repo, *params):
+    commit = {}
+    try:
+        log = repo.git.log(*params).split("\n")
+    except git.GitCommandError:
+        return
 
+    for line in log:
+        if line.startswith("    "):
+            if not 'message' in commit:
+                commit['message'] = ""
+            else:
+                commit['message'] += "\n"
+            commit['message'] += line[4:]
+        elif line:
+            if 'message' in commit:
+                yield commit
+                commit = {}
+            else:
+                field, value = line.split(None, 1)
+                commit[field.strip(":")] = value
+    if commit:
+        yield commit
+        
 
 class DsmRunner(AbstractRunner):
     """``SequentialRunner`` is an ``AbstractRunner`` implementation. It can
@@ -82,11 +105,13 @@ class DsmRunner(AbstractRunner):
         
         LOG_FOLDER = 293
         validation_rules = dsm_kedro_plugin.custom_dataset.validation.validation_rules.rules   
-        # dsm_kedro_plugin = __import__("dsm-kedro-plugin")
-        # import pdb; pdb.set_trace()
+        dsm_kedro_plugin = __import__("dsm-kedro-plugin")
+        
+        PIPELINE_PROJECT_PATH = dsm_kedro_plugin.generate_datanode.generate_setting.PIPELINE_PROJECT_PATH        
+        import pdb; pdb.set_trace()
         # get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
         # token = get_token()
-        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY3MjY0MzM1LCJpYXQiOjE2NjcxNzc5MzUsImp0aSI6ImUxMWY4NWQxM2M4NjQ2ZDY5MjhkMjA4YzNlNTZkN2YxIiwidXNlcl9pZCI6MTV9.xIgAhoU_AVoZO7_kNugHs3WOR1b2rPrpwP8G9mfkKII"
+        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY3Mzc3Nzg5LCJpYXQiOjE2NjcxOTgwMjYsImp0aSI6IjVjYjcxZTY5MjljMjQwZWE5NzlkMjA3MDQ1ZTAyY2IyIiwidXNlcl9pZCI6MTV9.AEzIsk8y3UmlTIUQXmad8j6utB3Vy4cj3wt_dA2-BYw"
         datanode = DataNode(token)
         val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in validation_rules.items() ]
         df_val_types = pd.DataFrame(val_types)
@@ -118,8 +143,14 @@ class DsmRunner(AbstractRunner):
         ## pipeline logs
         repo = git.Repo(search_parent_directories=True)
         branch = repo.active_branch
-        branch_name = branch.name
-        hexsha = repo.head.object.hexsha
+        current_branch_name = branch.name
+        # hexsha = repo.head.object.hexsha        
+        
+        import pdb;pdb.set_trace()
+        commits = list(parse_commit_log(repo, '/home/jovyan/work/new_kedro/kedro-template-tc-06/etl-pipeline/src/tests'))
+
+        repo_path = repo.remotes.origin.url.split('.git')[0]
+        last_commit_url = os.path.join(repo_path, '-/commit/', commits[0]['commit'])
     
 
 
@@ -282,8 +313,9 @@ class DsmRunner(AbstractRunner):
                 "name": pipeline_name,
                 "project": PROJECT_NAME,
                 "git": {
-                    "hexsha": hexsha,
-                    "branch_name": branch_name,
+                    "commits": commits,
+                    "current_branch_name": current_branch_name,
+                    "last_commit_url": last_commit_url,
                 }
             },
             "datanodes": datanode_detail,
