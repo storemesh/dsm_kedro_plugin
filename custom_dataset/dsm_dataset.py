@@ -17,7 +17,7 @@ import datetime
 import time
 
 
-# from .validation.validation_schema import validate_data, ValidationException
+from .validation.validation_schema import validate_data, ValidationException
 # from src.generate_datanode.utils.utils import write_dummy_file
 
 def write_dummy_file(file_name, directory_id, data_node):
@@ -48,27 +48,37 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self._file_id = file_id
         self._folder_id = folder_id
         self._file_name = file_name
-        self._config = config                   
+        self._config = config           
+        
+        self.meta = {
+            "file_id": file_id,
+            "folder_id": folder_id,
+            "file_name": file_name,
+            "config": config,
+        }
         
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = DataNode(self._token)
-        if self._file_id:
-            file_id = self._file_id
-        else:
-            try:
-                file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-            except Exception as e:
-                print("    Exception:", e)
-                return None
+        # if self._file_id:
+        #     file_id = self._file_id
+        # else:
+        #     try:
+        #         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        #     except Exception as e:
+        #         print("    Exception:", e)
+        #         return None
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         
-        ddf = data_node.read_ddf(file_id=file_id)       
+        ddf = data_node.read_ddf(file_id=file_id)
+        self.meta['file_id'] = file_id
         
-        return (ddf, file_id)
+        return (ddf, self.meta)
 
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
         start_time = datetime.datetime.now()
-        ddf, lineage_list = data
-
+        ddf, meta_list = data
+        lineage_list = [ item['file_id'] for item in meta_list]
+        
         data_node = DataNode(self._token)
         # import pdb; pdb.set_trace()
         file_id = None
@@ -80,36 +90,38 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             write_dummy_file(self._file_name, self._folder_id, data_node)
 
         if self._config and file_id:            
-            pass
+            # pass
             
-#             ddf_critical_error, ddf_rule_error = validate_data(
-#                 ddf, 
-#                 config=self._config, 
-#                 file_id=file_id, 
-#                 start_time=start_time
-#             )
+            ddf_critical_error, ddf_rule_error = validate_data(
+                ddf, 
+                config=self._config, 
+                file_id=file_id, 
+                start_time=start_time
+            )
 
-#             df_critical_error, df_rule_error, n_original_row = dask.compute(
-#                 ddf_critical_error,
-#                 ddf_rule_error,
-#                 ddf.shape[0]
-#             )
+            df_critical_error, df_rule_error, n_original_row = dask.compute(
+                ddf_critical_error,
+                ddf_rule_error,
+                ddf.shape[0]
+            )
 
-#             if df_critical_error.shape[0] > 0:
-#                 columns = df_critical_error.columns
-#                 df_critical_error = df_critical_error.reset_index().drop(columns=['index'])
-#                 raise ValidationException(
-#                     f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
-#                     f"df_critical_error : \n{df_critical_error}"
-#                 )
+            if df_critical_error.shape[0] > 0:
+                columns = df_critical_error.columns
+                df_critical_error = df_critical_error.reset_index().drop(columns=['index'])
+                raise ValidationException(
+                    f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
+                    f"df_critical_error : \n{df_critical_error}"
+                )
             
-#             if df_rule_error.shape[0] > 0:
-#                 path_save = f'logs/validation_logs/{file_id}.csv'
-#                 df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+            if df_rule_error.shape[0] > 0:
+                # path_save = f'logs/validation_logs/{file_id}.csv'
+                # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+                # import pdb;pdb.set_trace()
+                data_node.write(df=df_rule_error, directory=293, name=f"{file_id}_write", description="", replace=True, profiling=True, lineage=[file_id])
 
-#                 # remove error columns
-#                 pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
-#                 ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
+                # remove error columns
+                pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
+                ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
 
         else:
             n_original_row = dask.compute(ddf.shape[0])[0]
@@ -140,21 +152,19 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 class DsmListDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = DataNode(self._token)
-        if self._file_id:
-            file_id = self._file_id
-        else:
-            try:
-                file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
-            except Exception as e:
-                print("    Exception:", e)
-                return None
+        # try:
+        #     file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
+        # except Exception as e:
+        #     print("    Exception:", e)
+        file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
         
         ddf = data_node.get_update_data(file_id=file_id)       
-        
-        return (ddf, file_id)
+        self.meta['file_id'] = file_id
+        return (ddf, self.meta)
     
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
-        ddf, lineage_list = data
+        ddf, meta_list = data
+        lineage_list = [ item['file_id'] for item in meta_list]
 
         data_node = DataNode(self._token)
         # import pdb; pdb.set_trace()
