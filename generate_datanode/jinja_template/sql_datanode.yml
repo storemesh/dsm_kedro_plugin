@@ -1,5 +1,5 @@
 {{ catalog_name }}:
-  type: dsm-kedro-plugin.custom_dataset.dsm_dataset.DsmSQLDataNode
+  type: dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmSQLDataNode
   folder_id: {{ folder_id }}
   file_name: {{ catalog_name }}
   credentials: dsmlibrary

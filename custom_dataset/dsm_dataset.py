@@ -114,8 +114,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 )
             
             if df_rule_error.shape[0] > 0:
-                # path_save = f'logs/validation_logs/{file_id}.csv'
+                folder_path = 'logs/validation_logs/'
+                save_path = os.path.join(folder_path, f'{self._folder_id}___{self._file_name}___write.csv')
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path, exist_ok=True)
+                    
                 # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+                df_rule_error.to_csv(save_path, index=False)
+                
+                
                 # import pdb;pdb.set_trace()
                 data_node.write(df=df_rule_error, directory=293, name=f"{file_id}_write", description="", replace=True, profiling=True, lineage=[file_id])
 

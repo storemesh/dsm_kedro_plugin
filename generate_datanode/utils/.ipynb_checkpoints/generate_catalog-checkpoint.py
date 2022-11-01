@@ -190,7 +190,7 @@ def generate_integration_catalogs(integration_table, integration_folder_id, toke
             'catalog_name': catalog_name,
             'file_name': table_name,            
             'folder_id': integration_folder_id,
-            'file_id': integraton_file_id,
+            # 'file_id': integraton_file_id,
             'config': config,
         }
         node_list.append(data)

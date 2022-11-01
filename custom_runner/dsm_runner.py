@@ -19,14 +19,14 @@ from datetime import datetime
 import uuid
 import json
 import pandas as pd
+import os
 from dsmlibrary.datanode import DataNode
 
 from etl_pipeline.pipeline_registry import register_pipelines
 from config.config_source_table import PROJECT_NAME
-dsm_kedro_plugin = __import__("dsm-kedro-plugin")
+from dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
+from dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
 
-
-# from dsm-kedro-plugin.custom_dataset.validation.validation_rules import rules
 
 def parse_commit_log(repo, *params):
     commit = {}
@@ -104,16 +104,15 @@ class DsmRunner(AbstractRunner):
         """
         
         LOG_FOLDER = 293
-        validation_rules = dsm_kedro_plugin.custom_dataset.validation.validation_rules.rules   
-        dsm_kedro_plugin = __import__("dsm-kedro-plugin")
+        # validation_rules = dsm_kedro_plugin.custom_dataset.validation.validation_rules.rules   
+        # dsm_kedro_plugin = __import__("dsm-kedro-plugin")
         
-        PIPELINE_PROJECT_PATH = dsm_kedro_plugin.generate_datanode.generate_setting.PIPELINE_PROJECT_PATH        
-        import pdb; pdb.set_trace()
+            
         # get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
         # token = get_token()
         token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY3Mzc3Nzg5LCJpYXQiOjE2NjcxOTgwMjYsImp0aSI6IjVjYjcxZTY5MjljMjQwZWE5NzlkMjA3MDQ1ZTAyY2IyIiwidXNlcl9pZCI6MTV9.AEzIsk8y3UmlTIUQXmad8j6utB3Vy4cj3wt_dA2-BYw"
         datanode = DataNode(token)
-        val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in validation_rules.items() ]
+        val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in rules.items() ]
         df_val_types = pd.DataFrame(val_types)
         
         start_run_all = datetime.now()
@@ -146,12 +145,17 @@ class DsmRunner(AbstractRunner):
         current_branch_name = branch.name
         # hexsha = repo.head.object.hexsha        
         
-        import pdb;pdb.set_trace()
-        commits = list(parse_commit_log(repo, '/home/jovyan/work/new_kedro/kedro-template-tc-06/etl-pipeline/src/tests'))
+        
+        # import pdb;pdb.set_trace()
+        pipeline_path = os.path.join(PIPELINE_PROJECT_PATH, 'pipelines/', pipeline_name)
+        commits = list(parse_commit_log(repo, pipeline_path))
 
         repo_path = repo.remotes.origin.url.split('.git')[0]
         last_commit_url = os.path.join(repo_path, '-/commit/', commits[0]['commit'])
-    
+        last_editor = commits[0]['Author']   
+        
+        ## get pipeline detail
+        pipeline_id = 1
 
 
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
@@ -329,26 +333,18 @@ class DsmRunner(AbstractRunner):
         print(json.dumps(output_dict, indent=4, default=str))
         
         print('------------')
-        
-        # - uuid
-        # - start_time
-        # - end_time
-        # - status
-        # - pipeline_json_file
-        # - owner
-        # - project_name
-        # - pipeline_name
         end_run_all = datetime.now()
+        
+        result_status = "success" if is_run_all_success else "fail"
         run_all_result = {
             'uuid': str(uuid.uuid4()),
+            'pipeline': pipeline_id,
             'start_time': start_run_all,
             'end_time': end_run_all,
-            'duration': str(end_run_all - start_run_all),
-            'status': True if is_run_all_success else False,
-            'pipeline_json_file': 'json_field',
-            'owner': 'get owner from token',
-            'project_name': PROJECT_NAME,
-            'pipeline_name': pipeline_name,
+            # 'duration': str(end_run_all - start_run_all),
+            'status': result_status,
+            'result': "result", #output_dict,
+            'last_editor': last_editor,
         }
         print(json.dumps(run_all_result, indent=4, default=str))
         
