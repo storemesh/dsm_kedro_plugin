@@ -346,7 +346,7 @@ class DsmRunner(AbstractRunner):
         print('------------')
         end_run_all = datetime.now()
         
-        result_status = "success" if is_run_all_success else "fail"
+        result_status = "SUCCESS" if is_run_all_success else "FAILED"
         run_all_result = {
             'uuid': str(uuid.uuid4()),
             'pipeline': pipeline_id,
@@ -357,10 +357,25 @@ class DsmRunner(AbstractRunner):
             'result': "result", #output_dict,
             'last_editor': last_editor,
         }
-        print(json.dumps(run_all_result, indent=4, default=str))
         
-
+        json_str = json.dumps(run_all_result, indent=4, default=str)
+        json_data = json.loads(json_str)
+        print(json_data)
         
-            
+        base_url = "https://api.discovery.data.storemesh.com/api/v1"
+        url = f"{base_url}/logs/run-pipeline/"
+        headers = {'Authorization': f'Bearer {token}'}
+        r = requests.post(url, data=json_data, headers=headers)
         
-        print('ddd')
+        
+        # {
+        #     "uuid": "xxxyyyzzz1",
+        #     "start_time": "2022-10-01 12:00:01",
+        #     "end_time": "2022-10-01 13:00:01",
+        #     "status": "SUCESS",
+        #     "result": {
+        #         "id": 1
+        #     },
+        #     "last_editor": "sothanav",
+        #     "pipeline": 1
+        # }
