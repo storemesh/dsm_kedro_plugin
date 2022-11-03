@@ -5,6 +5,7 @@ import sys
 import os
 
 from kedro.io import AbstractDataSet
+from kedro.extras.datasets.api.api_dataset import APIDataSet
 import dask
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
@@ -115,7 +116,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             
             if df_rule_error.shape[0] > 0:
                 folder_path = 'logs/validation_logs/'
-                save_path = os.path.join(folder_path, f'{self._folder_id}___{self._file_name}___write.csv')
+                save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_write.csv')
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path, exist_ok=True)
                     
@@ -264,4 +265,23 @@ class DsmSQLDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
     def _describe(self) -> Dict[str, Any]:
         pass
-   
+    
+    
+    
+class DsmAPIDataSet(APIDataSet):
+    def __init__(
+        self, 
+        credentials: Dict[str, Any] = None,
+        *args, 
+        **kw,
+        
+    ) -> None:
+        super().__init__(*args, **kw)
+        
+        if 'headers' in credentials:
+            self._request_args['headers'].update(credentials['headers'])
+        
+        self._request_args['auth'] = None
+        
+        
+    

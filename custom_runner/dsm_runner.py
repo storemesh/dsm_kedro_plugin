@@ -20,6 +20,7 @@ import uuid
 import json
 import pandas as pd
 import os
+import dask.dataframe as dd
 from dsmlibrary.datanode import DataNode
 
 from etl_pipeline.pipeline_registry import register_pipelines
@@ -110,6 +111,8 @@ class DsmRunner(AbstractRunner):
             
         # get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
         # token = get_token()
+        validation_log_dir = 'logs/validation_logs/'
+        
         token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY3Mzc3Nzg5LCJpYXQiOjE2NjcxOTgwMjYsImp0aSI6IjVjYjcxZTY5MjljMjQwZWE5NzlkMjA3MDQ1ZTAyY2IyIiwidXNlcl9pZCI6MTV9.AEzIsk8y3UmlTIUQXmad8j6utB3Vy4cj3wt_dA2-BYw"
         datanode = DataNode(token)
         val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in rules.items() ]
@@ -286,14 +289,22 @@ class DsmRunner(AbstractRunner):
                 })
                 
                 file_id = datanode_detail[dataset_name]['file_id']
-                log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
+                folder_id = datanode_detail[dataset_name]['meta']['folder_id']
+                file_name = datanode_detail[dataset_name]['meta']['file_name']
+                
+                
+                log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_write.csv')
+                
+                
+                # log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
                 url_path = f"{LOG_FOLDER}/{file_id}.parquet"
                 
                 # import pdb;pdb.set_trace()
                 
-                ddf = datanode.read_ddf(file_id=log_file_id)
+                # ddf_log = datanode.read_ddf(file_id=log_file_id)
+                ddf_log = dd.read_csv(log_path)
                 
-                ddf_merge = ddf.merge(df_val_types, on='rule_name')
+                ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
                 
                 df_type_count = ddf_merge.groupby(['rule_type'])['pk'].nunique().compute()
                 count_format = df_type_count['format'] if 'format' in df_type_count else 0
