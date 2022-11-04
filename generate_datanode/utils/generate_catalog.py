@@ -14,12 +14,16 @@ import importlib.machinery
 from .utils import find_system_detail, camel_case, find_pk_column, get_numpy_schema, get_database_schema, md5hash, get_env_var, create_file_if_not_exist
 from generate_setting import KEDRO_PROJECT_BASE, JINJA_PATH, SQL_DATANODE_CATALOG_PATH, LANDING_CATALOG_PATH, INTEGRATION_CATALOG_PATH
 
-def generate_sql_datanode(source_table, sql_datanode_folder_id, token, write_mode=False):
+
+def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_name, token, write_mode=False):
     if write_mode:
         with open(SQL_DATANODE_CATALOG_PATH, 'w') as f:
             f.write('')
 
     database = DatabaseManagement(token=token)
+    data_node = DataNode(token)
+    sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
+    
     for database_id, table_list in source_table.items():
         # exec to define class object         
         table_id = get_database_schema(database_id)
@@ -66,8 +70,9 @@ def query():
 # Landing
 def generate_landing_pipeline(
         source_table, 
-        sql_datanode_folder_id, 
-        landing_folder_id, 
+        project_folder_id,
+        sql_datanode_folder_name, 
+        landing_folder_name, 
         query_landing_pipeline_path, 
         token, 
         write_mode=True,
@@ -80,6 +85,8 @@ def generate_landing_pipeline(
 
         with open(LANDING_CATALOG_PATH, 'w') as f:
             f.write('')
+            
+        
 
         landing_node_path = os.path.join(query_landing_pipeline_path, 'nodes.py')
         template = env_node.get_template(f'landing_nodes.py')     
@@ -102,7 +109,8 @@ def generate_landing_pipeline(
 
     node_list = []
     data_node = DataNode(token)
-
+    sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
+    landing_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=landing_folder_name)
     
     for database_id, table_list in source_table.items():
         for table_name in table_list:     
@@ -173,12 +181,20 @@ def generate_landing_pipeline(
 
 
 # integration
-def generate_integration_catalogs(integration_table, integration_folder_id, token, append=False):  
+def generate_integration_catalogs(
+    integration_table, 
+    project_folder_id,
+    integration_folder_name, 
+    token, 
+    append=False
+):  
     with open(INTEGRATION_CATALOG_PATH, 'w') as f:
         f.write('')    
 
     node_list = []
     data_node = DataNode(token)
+    integration_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=integration_folder_name)
+    
     for table_name, config in integration_table.items():  
         catalog_name = f'integration___{table_name}'
         # integraton_file_id = create_file_if_not_exist(
