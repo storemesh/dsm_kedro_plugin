@@ -1,9 +1,12 @@
 import yaml
-from utils.utils import get_token
-from config.config_integration_table import integration_table
-from config.project_setting import PROJECT_FOLDER_ID
-from utils.generate_catalog import generate_integration_catalogs
+import sys
+import os
+sys.path.append(os.getcwd())
 
+from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
+from src.dsm_kedro_plugin.generate_datanode.utils.generate_catalog import generate_integration_catalogs
+from src.config.config_integration_table import integration_table
+from src.config.project_setting import PROJECT_FOLDER_ID
 
 token = get_token()
 

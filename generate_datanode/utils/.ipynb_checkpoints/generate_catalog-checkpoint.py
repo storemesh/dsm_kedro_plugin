@@ -157,7 +157,7 @@ def generate_landing_pipeline(
                 # 'landing_latest_catalog_name': landing_latest_catalog_name,
                 # 'landing_temp_catalog_name': landing_temp_catalog_name,
                 # 'landing_change_catalog_name': landing_change_catalog_name,
-                'folder_id': landing_folder_id[database_id],
+                'folder_id': landing_folder_id,
                 'database_name': database_name,
                 # 'landing_file_id': landing_file_id,
                 # 'landing_latest_file_id': landing_latest_file_id,

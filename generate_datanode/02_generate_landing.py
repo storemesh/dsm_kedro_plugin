@@ -1,10 +1,14 @@
 import yaml
+import sys
 import os
-from utils.utils import get_token, get_env_var
-from config.config_source_table import source_table #, sql_datanode_folder_id, landing_folder_id
-from config.project_setting import PROJECT_FOLDER_ID
-from utils.generate_catalog import generate_landing_pipeline
-from generate_setting import QUERY_LANDING_PIPELINE_PATH
+sys.path.append(os.getcwd())
+
+from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
+from src.dsm_kedro_plugin.generate_datanode.utils.generate_catalog import generate_landing_pipeline
+from src.dsm_kedro_plugin.generate_datanode.generate_setting import QUERY_LANDING_PIPELINE_PATH
+from src.config.config_source_table import source_table
+from src.config.project_setting import PROJECT_FOLDER_ID
+
 
 token = get_token()
 
