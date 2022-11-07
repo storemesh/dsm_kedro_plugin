@@ -48,7 +48,7 @@ def query():
             database.write_sql_query(
                 # df=ddf,
                 query_function=query_template,
-                directory_id=sql_datanode_folder_id[database_id], 
+                directory_id=sql_datanode_folder_id, 
                 table_id=table_id, 
                 pk_column=pk_column, 
                 name=catalog_name, 
@@ -59,7 +59,7 @@ def query():
             data = {
                 'catalog_name': catalog_name,
                 'file_name': table_name,
-                'folder_id': sql_datanode_folder_id[database_id],
+                'folder_id': sql_datanode_folder_id,
             }
             if write_mode:
                 env_node = Environment(loader=FileSystemLoader(JINJA_PATH))  

@@ -10,10 +10,12 @@ import os
 import time
 from dask.diagnostics import ProgressBar
 
-from generate_setting import KEDRO_PROJECT_BASE
 import sys
-sys.path.append("../..")
-from config.config_database import db_connection, db_schema
+import os
+sys.path.append(os.getcwd())
+
+from src.dsm_kedro_plugin.generate_datanode.generate_setting import KEDRO_PROJECT_BASE
+from src.config.config_database import db_connection, db_schema
 
 map_dict = {
     Float: 'float',
