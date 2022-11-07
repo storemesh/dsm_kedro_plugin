@@ -1,21 +1,18 @@
+import sys
+sys.path.append("..")
+
 from dsmlibrary.datanode import DataNode
+from config.project_setting import REQUIRED_FOLDER_LIST, PROJECT_FOLDER_ID
+from dsm_kedro_plugin.generate_datanode.utils.utils import get_token
 
-# 
-
-required_folder_list = ["Landing", "Staging", "Integration", "Logs"]
-
-optional_folder_list = ["Factable", "Master"]
-
-
-project_folder_id = 10
-
+token = get_token()
 datanode = DataNode(token)
 
-for folder_name in required_folder_list:
+for folder_name in REQUIRED_FOLDER_LIST:
     # create folder 
     try:
-        datanode.createDirectory(self, directory_id=project_folder_id, name=folder_name, description=None)
+        datanode.createDirectory(self, directory_id=PROJECT_FOLDER_ID, name=folder_name, description=None)
     except Exception as e:
-        print(f'Exception: {e})
+        print(f'Exception: {e}')
               
         # get_directory_id(self, parent_dir_id=project_folder_id, name="Landing")
