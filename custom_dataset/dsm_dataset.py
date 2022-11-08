@@ -3,6 +3,7 @@ from typing import Any, Dict, Tuple, List
 import numpy as np
 import sys
 import os
+sys.path.append(os.getcwd())
 
 from kedro.io import AbstractDataSet
 from kedro.extras.datasets.api.api_dataset import APIDataSet
@@ -19,6 +20,7 @@ import time
 
 
 from .validation.validation_schema import validate_data, ValidationException
+from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
 # from src.generate_datanode.utils.utils import write_dummy_file
 
 def write_dummy_file(file_name, directory_id, data_node):
@@ -57,9 +59,18 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             "file_name": file_name,
             "config": config,
         }
+
+    def _get_data_node(self):
+        data_node = DataNode(
+            self._token, 
+            dataplatform_api_uri=DATAPLATFORM_API_URI,
+            object_storage_uri=OBJECT_STORAGE_URI,
+        )
+        return data_node
+
         
     def _load(self) -> Tuple[dd.DataFrame, int]:
-        data_node = DataNode(self._token)
+        data_node = self._get_data_node()
         # if self._file_id:
         #     file_id = self._file_id
         # else:
@@ -80,10 +91,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
         
-        data_node = DataNode(self._token)
-        # import pdb; pdb.set_trace()
+        data_node = self._get_data_node()
         file_id = None
-        # import pdb; pdb.set_trace()
         try:
             file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         except Exception as e:
@@ -159,7 +168,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     
 class DsmListDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
-        data_node = DataNode(self._token)
+        data_node = self._get_data_node()
         # try:
         #     file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
         # except Exception as e:
@@ -175,7 +184,7 @@ class DsmListDataNode(DsmDataNode):
         ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
 
-        data_node = DataNode(self._token)
+        data_node = self._get_data_node()
         # import pdb; pdb.set_trace()
         file_id = None
         # import pdb; pdb.set_trace()
@@ -195,7 +204,7 @@ class DsmDataNodeAppend(DsmDataNode):
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
         ddf, lineage_list = data
 
-        data_node = DataNode(self._token)
+        data_node = self._get_data_node()
         
         if self._data_type:
             self._check_data_type('Write Process', ddf)
@@ -233,7 +242,7 @@ class DsmDataNodeAppend(DsmDataNode):
     
 class DsmSQLDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
-        data_node = DataNode(self._token)
+        data_node = self._get_data_node()
         if self._file_id:
             file_id = self._file_id
         else:
