@@ -122,7 +122,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                     f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
                     f"df_critical_error : \n{df_critical_error}"
                 )
-            import pdb; pdb.set_trace()
+                
             if df_rule_error.shape[0] > 0:
                 folder_path = 'logs/validation_logs/'
                 save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_write.csv')
