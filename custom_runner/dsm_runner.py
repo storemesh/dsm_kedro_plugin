@@ -140,8 +140,6 @@ class DsmRunner(AbstractRunner):
                 description=f"log file of '{file_name}' ({file_id})", 
                 lineage=[file_id]
             )
-            # print(log_filename)
-            # import pdb; pdb.set_trace()
             time.sleep(1)
             log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
             # datanode.write(df=ddf_merge, directory=log_folder_id, name=f'{folder_id}_{file_name}_{type}', replace=True, lineage=)
@@ -277,7 +275,7 @@ class DsmRunner(AbstractRunner):
             start_time = datetime.now()
             
             is_success = True
-            error_log = None
+            error_log = "-----"
             try:
                 run_node(node, catalog, hook_manager, self._is_async, session_id)
                 done_nodes.add(node)
@@ -298,6 +296,22 @@ class DsmRunner(AbstractRunner):
             delta = end_time - start_time
             print('Difference is:', delta)
 
+
+            log_filename = f'function_{node.name}.txt'
+            log_path = os.path.join(validation_log_dir, log_filename)
+            with open(log_path, 'w') as f:
+                f.write(error_log)
+
+
+            # write log file
+            datanode.upload_file(
+                directory_id=log_folder_id, 
+                file_path=log_path, 
+                description=f"log file of '{node.name}'", 
+                # lineage=[file_id]
+            )
+            time.sleep(1)
+            log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
             
             func_log_list[node.name] = {
                 "func_id": node.name,
@@ -307,7 +321,7 @@ class DsmRunner(AbstractRunner):
                 "end": end_time,
                 "duration": str(delta),
                 "is_success": is_success,
-                "log_error": error_log,
+                "logs_file_id": log_file_id,
             }
             #####
             
@@ -384,29 +398,6 @@ class DsmRunner(AbstractRunner):
                     validation_log_dir=validation_log_dir,
                     datanode=datanode,
                 )
-
-                # file_id = datanode_detail[dataset_name]['file_id']
-                # folder_id = datanode_detail[dataset_name]['meta']['folder_id']
-                # file_name = datanode_detail[dataset_name]['meta']['file_name']
-                
-                
-                # log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read.csv')
-                # all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read_all_record.json')
-                
-                # url_path = f"{LOG_FOLDER}/{datanode_detail[dataset_name]['file_id']}.parquet"
-                
-                
-                # # monad input
-                # monad_log_list[edge_id] = {
-                #     'file_id': datanode_detail[dataset_name]['file_id'],
-                #     'name': dataset_name,
-                #     'type': 'read',
-                #     'run_datetime': start_run_all,
-                #     'format_summary': None,
-                #     'consistency_summary': None,
-                #     'completeness_summary': None,
-                #     'log_url': url_path,
-                # }
             
             ## output_edges & monad output
             for dataset_name in list(node.outputs):
@@ -428,49 +419,6 @@ class DsmRunner(AbstractRunner):
                     validation_log_dir=validation_log_dir,
                     datanode=datanode
                 )
-                
-                # file_id = datanode_detail[dataset_name]['file_id']
-                # folder_id = datanode_detail[dataset_name]['meta']['folder_id']
-                # file_name = datanode_detail[dataset_name]['meta']['file_name']
-                
-                
-                # log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_write.csv')
-                # all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_write_all_record.json')
-                
-                
-                # # log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
-                # url_path = f"{LOG_FOLDER}/{file_id}.parquet"
-                
-                # # import pdb;pdb.set_trace()
-                
-                # # ddf_log = datanode.read_ddf(file_id=log_file_id)
-
-                # if os.path.exists(log_path):
-                #     count_format, count_consistency, count_completeness, all_record = self._read_monad_logs(
-                #         log_path=log_path, 
-                #         all_record_path=all_record_path, 
-                #         df_val_types=df_val_types,
-                #         type='write'
-                #         datanode_detail=datanode_detail,
-                #         dataset_name=dataset_name,
-                #         start_run_all=start_run_all,
-                #         edge_id=edge_id,
-                #     )
-
-                #     # monad output
-                #     monad_log_list[edge_id] = {
-                #         'file_id': datanode_detail[dataset_name]['file_id'],
-                #         'name': dataset_name,
-                #         'type': 'write',
-                #         'run_datetime': start_run_all,
-                #         'n_error_format': count_format,
-                #         'n_error_consistency': count_consistency,
-                #         'n_error_completeness': count_completeness,
-                #         'all_record': all_record,
-                #     }
-                    
-                # else:
-                #     monad_log_list[edge_id] = None
                 
         
         output_dict = {
@@ -507,25 +455,9 @@ class DsmRunner(AbstractRunner):
             'result': output_dict,
             'last_editor': last_editor,
         }
-        # print(json.dumps(run_all_result, indent=4, default=str))
         
         json_str = json.dumps(run_all_result, indent=4, default=str)
         json_data = json.loads(json_str)
-        # print(json_data)
         
         res = requests.post(url, json=json_data, headers=headers)
-
-        print('ddd')
-        
-        
-        # {
-        #     "uuid": "xxxyyyzzz1",
-        #     "start_time": "2022-10-01 12:00:01",
-        #     "end_time": "2022-10-01 13:00:01",
-        #     "status": "SUCESS",
-        #     "result": {
-        #         "id": 1
-        #     },
-        #     "last_editor": "sothanav",
-        #     "pipeline": 1
-        # }
+        print(res)
