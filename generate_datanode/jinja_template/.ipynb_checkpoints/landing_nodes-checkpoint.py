@@ -11,10 +11,10 @@ def md5hash(x):
     return hashlib.md5(x.encode('utf-8')).hexdigest()
 
 def pass_data(data_query: Tuple[dd.DataFrame, int]) -> Tuple[dd.DataFrame, int]:
-    ddf_query, ddf_query_file_id = data_query
+    ddf_query, ddf_query_meta = data_query
     
-    lineage_id = [ ddf_query_file_id ]
-    return (ddf_query, lineage_id)
+    lineage_list = [ ddf_query_meta ]
+    return (ddf_query, lineage_list)
 
 def get_change_data(
         data_query: Tuple[dd.DataFrame, int], 

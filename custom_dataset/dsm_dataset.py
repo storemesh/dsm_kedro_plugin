@@ -113,13 +113,13 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                     f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
                     f"df_critical_error : \n{df_critical_error}"
                 )
-            
+            import pdb; pdb.set_trace()
             if df_rule_error.shape[0] > 0:
                 folder_path = 'logs/validation_logs/'
                 save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_write.csv')
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path, exist_ok=True)
-                    
+                
                 # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
                 df_rule_error.to_csv(save_path, index=False)
                 
@@ -168,6 +168,7 @@ class DsmListDataNode(DsmDataNode):
         
         ddf = data_node.get_update_data(file_id=file_id)       
         self.meta['file_id'] = file_id
+        
         return (ddf, self.meta)
     
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
@@ -230,23 +231,7 @@ class DsmDataNodeAppend(DsmDataNode):
             ignore_divisions=True
         )
     
-class DsmSQLDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
-    def __init__(
-             self,          
-             credentials: Dict[str, Any],        
-             folder_id: int,
-             file_name: str,
-             file_id: int = None,
-             data_type: Dict[str, Any] = None,
-        ):
-        
-        self._token = credentials['token']
-        self._file_id = file_id
-        self._folder_id = folder_id
-        self._file_name = file_name
-        self._data_type = data_type
-        
-    
+class DsmSQLDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = DataNode(self._token)
         if self._file_id:
@@ -255,10 +240,10 @@ class DsmSQLDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=self._folder_id)
         
         ddf = data_node.read_ddf(file_id=file_id)        
-        if self._data_type:
-            self._check_data_type('Read Process', ddf)
+            
+        self.meta['file_id'] = file_id
         
-        return (ddf, file_id)
+        return (ddf, self.meta)
             
     def _save(self, ddf: dd.DataFrame) -> None:
         pass

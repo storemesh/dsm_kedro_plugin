@@ -2,6 +2,9 @@
 used to run the ``Pipeline`` in a sequential manner using a topological sort
 of provided nodes.
 """
+import sys
+import os
+sys.path.append(os.getcwd())
 
 from collections import Counter
 from itertools import chain
@@ -24,9 +27,10 @@ import dask.dataframe as dd
 from dsmlibrary.datanode import DataNode
 
 from etl_pipeline.pipeline_registry import register_pipelines
-from config.config_source_table import PROJECT_NAME
-from dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
-from dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
+from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
+from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
+from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
+from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME
 
 
 def parse_commit_log(repo, *params):
@@ -103,18 +107,13 @@ class DsmRunner(AbstractRunner):
         Raises:
             Exception: in case of any downstream node failure.
         """
-        
-        LOG_FOLDER = 293
-        # validation_rules = dsm_kedro_plugin.custom_dataset.validation.validation_rules.rules   
-        # dsm_kedro_plugin = __import__("dsm-kedro-plugin")
-        
-            
-        # get_token = dsm_kedro_plugin.generate_datanode.utils.utils.get_token
-        # token = get_token()
+        token = get_token()
+        datanode = DataNode(token)
+        import pdb;pdb.set_trace()
+        LOG_FOLDER = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
         validation_log_dir = 'logs/validation_logs/'
         
-        token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjY3Mzc3Nzg5LCJpYXQiOjE2NjcxOTgwMjYsImp0aSI6IjVjYjcxZTY5MjljMjQwZWE5NzlkMjA3MDQ1ZTAyY2IyIiwidXNlcl9pZCI6MTV9.AEzIsk8y3UmlTIUQXmad8j6utB3Vy4cj3wt_dA2-BYw"
-        datanode = DataNode(token)
+        
         val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in rules.items() ]
         df_val_types = pd.DataFrame(val_types)
         
@@ -358,11 +357,13 @@ class DsmRunner(AbstractRunner):
             'last_editor': last_editor,
         }
         
+        import pdb;pdb.set_trace()
+        
         json_str = json.dumps(run_all_result, indent=4, default=str)
         json_data = json.loads(json_str)
         print(json_data)
         
-        base_url = "https://api.discovery.data.storemesh.com/api/v1"
+        base_url = "https://api.dev.discovery.data.storemesh.com/api"
         url = f"{base_url}/logs/run-pipeline/"
         headers = {'Authorization': f'Bearer {token}'}
         r = requests.post(url, data=json_data, headers=headers)
