@@ -23,6 +23,7 @@ from datetime import datetime
 import uuid
 import json
 import pandas as pd
+import time
 import os
 import dask.dataframe as dd
 from dsmlibrary.datanode import DataNode
@@ -32,7 +33,6 @@ from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
 from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
-
 
 def parse_commit_log(repo, *params):
     commit = {}
@@ -94,25 +94,25 @@ class DsmRunner(AbstractRunner):
 
     def _read_monad_logs(
         self, 
-        log_path, 
-        all_record_path, 
         df_val_types,
         type,
         datanode_detail,
         dataset_name,
         start_run_all,
         validation_log_dir,
+        datanode,
     ):
         file_id = datanode_detail[dataset_name]['file_id']
         folder_id = datanode_detail[dataset_name]['meta']['folder_id']
         file_name = datanode_detail[dataset_name]['meta']['file_name']
         
-        
-        log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_{type}.csv')
+        log_filename = f'{folder_id}_{file_name}_{type}.csv'
+        log_path = os.path.join(validation_log_dir, log_filename)
         all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_{type}_all_record.json')
                 
-                
-                # log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
+        log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
+        
+                # 
                 # url_path = f"{LOG_FOLDER}/{file_id}.parquet"
                 
                 # import pdb;pdb.set_trace()
@@ -121,6 +121,7 @@ class DsmRunner(AbstractRunner):
 
         if os.path.exists(log_path):
             ddf_log = dd.read_csv(log_path)
+            
             
             ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
             
@@ -131,28 +132,33 @@ class DsmRunner(AbstractRunner):
             
             with open(all_record_path) as data_file:
                 all_record = json.load(data_file)['all_record']
-
-            # count_format, count_consistency, count_completeness, all_record = self._read_monad_logs(
-            #     log_path=log_path, 
-            #     all_record_path=all_record_path, 
-            #     df_val_types=df_val_types,
-            #     type='write'
-            #     datanode_detail=datanode_detail,
-            #     dataset_name=dataset_name,
-            #     start_run_all=start_run_all,
-            #     edge_id=edge_id,
-            # )
+                
+            # write log file
+            datanode.upload_file(
+                directory_id=log_folder_id, 
+                file_path=log_path, 
+                description=f"log file of '{file_name}' ({file_id})", 
+                lineage=[file_id]
+            )
+            # print(log_filename)
+            # import pdb; pdb.set_trace()
+            time.sleep(1)
+            log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
+            # datanode.write(df=ddf_merge, directory=log_folder_id, name=f'{folder_id}_{file_name}_{type}', replace=True, lineage=)
+                
+            
 
             # monad output
             return {
                 'file_id': datanode_detail[dataset_name]['file_id'],
                 'name': dataset_name,
-                'type': 'write',
+                'type': type,
                 'run_datetime': start_run_all,
                 'n_error_format': count_format,
                 'n_error_consistency': count_consistency,
                 'n_error_completeness': count_completeness,
                 'all_record': all_record,
+                'logs_file_id': log_file_id,
             }
             
         else:
@@ -189,7 +195,7 @@ class DsmRunner(AbstractRunner):
             dataplatform_api_uri=DATAPLATFORM_API_URI,
             object_storage_uri=OBJECT_STORAGE_URI,
         )
-        LOG_FOLDER = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
+        log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
         validation_log_dir = 'logs/validation_logs/'
         
         
@@ -369,28 +375,38 @@ class DsmRunner(AbstractRunner):
                     'target': node.name,
                 })
 
-                file_id = datanode_detail[dataset_name]['file_id']
-                folder_id = datanode_detail[dataset_name]['meta']['folder_id']
-                file_name = datanode_detail[dataset_name]['meta']['file_name']
+                monad_log_list[edge_id] = self._read_monad_logs(
+                    df_val_types=df_val_types,
+                    type='read',
+                    datanode_detail=datanode_detail,
+                    dataset_name=dataset_name,
+                    start_run_all=start_run_all,
+                    validation_log_dir=validation_log_dir,
+                    datanode=datanode,
+                )
+
+                # file_id = datanode_detail[dataset_name]['file_id']
+                # folder_id = datanode_detail[dataset_name]['meta']['folder_id']
+                # file_name = datanode_detail[dataset_name]['meta']['file_name']
                 
                 
-                log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read.csv')
-                all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read_all_record.json')
+                # log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read.csv')
+                # all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read_all_record.json')
                 
-                url_path = f"{LOG_FOLDER}/{datanode_detail[dataset_name]['file_id']}.parquet"
+                # url_path = f"{LOG_FOLDER}/{datanode_detail[dataset_name]['file_id']}.parquet"
                 
                 
-                # monad input
-                monad_log_list[edge_id] = {
-                    'file_id': datanode_detail[dataset_name]['file_id'],
-                    'name': dataset_name,
-                    'type': 'read',
-                    'run_datetime': start_run_all,
-                    'format_summary': None,
-                    'consistency_summary': None,
-                    'completeness_summary': None,
-                    'log_url': url_path,
-                }
+                # # monad input
+                # monad_log_list[edge_id] = {
+                #     'file_id': datanode_detail[dataset_name]['file_id'],
+                #     'name': dataset_name,
+                #     'type': 'read',
+                #     'run_datetime': start_run_all,
+                #     'format_summary': None,
+                #     'consistency_summary': None,
+                #     'completeness_summary': None,
+                #     'log_url': url_path,
+                # }
             
             ## output_edges & monad output
             for dataset_name in list(node.outputs):
@@ -404,14 +420,13 @@ class DsmRunner(AbstractRunner):
                 })
 
                 monad_log_list[edge_id] = self._read_monad_logs(
-                    log_path=log_path, 
-                    all_record_path=all_record_path, 
                     df_val_types=df_val_types,
                     type='write',
                     datanode_detail=datanode_detail,
                     dataset_name=dataset_name,
                     start_run_all=start_run_all,
                     validation_log_dir=validation_log_dir,
+                    datanode=datanode
                 )
                 
                 # file_id = datanode_detail[dataset_name]['file_id']
