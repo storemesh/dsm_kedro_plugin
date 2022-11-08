@@ -15,6 +15,7 @@ from kedro.io import AbstractDataSet, DataCatalog, MemoryDataSet
 from kedro.pipeline import Pipeline
 from kedro.runner.runner import AbstractRunner, run_node
 
+import requests
 import git
 import inspect
 import traceback
@@ -30,7 +31,7 @@ from etl_pipeline.pipeline_registry import register_pipelines
 from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
-from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME
+from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
 
 
 def parse_commit_log(repo, *params):
@@ -89,6 +90,81 @@ class DsmRunner(AbstractRunner):
         return MemoryDataSet()
 
 
+                
+
+    def _read_monad_logs(
+        self, 
+        log_path, 
+        all_record_path, 
+        df_val_types,
+        type,
+        datanode_detail,
+        dataset_name,
+        start_run_all,
+        validation_log_dir,
+    ):
+        file_id = datanode_detail[dataset_name]['file_id']
+        folder_id = datanode_detail[dataset_name]['meta']['folder_id']
+        file_name = datanode_detail[dataset_name]['meta']['file_name']
+        
+        
+        log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_{type}.csv')
+        all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_{type}_all_record.json')
+                
+                
+                # log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
+                # url_path = f"{LOG_FOLDER}/{file_id}.parquet"
+                
+                # import pdb;pdb.set_trace()
+                
+                # ddf_log = datanode.read_ddf(file_id=log_file_id)
+
+        if os.path.exists(log_path):
+            ddf_log = dd.read_csv(log_path)
+            
+            ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
+            
+            df_type_count = ddf_merge.groupby(['rule_type'])['pk'].nunique().compute()
+            count_format = df_type_count['format'] if 'format' in df_type_count else 0
+            count_consistency = df_type_count['consistency'] if 'consistency' in df_type_count else 0
+            count_completeness = df_type_count['completeness'] if 'completeness' in df_type_count  else 0
+            
+            with open(all_record_path) as data_file:
+                all_record = json.load(data_file)['all_record']
+
+            # count_format, count_consistency, count_completeness, all_record = self._read_monad_logs(
+            #     log_path=log_path, 
+            #     all_record_path=all_record_path, 
+            #     df_val_types=df_val_types,
+            #     type='write'
+            #     datanode_detail=datanode_detail,
+            #     dataset_name=dataset_name,
+            #     start_run_all=start_run_all,
+            #     edge_id=edge_id,
+            # )
+
+            # monad output
+            return {
+                'file_id': datanode_detail[dataset_name]['file_id'],
+                'name': dataset_name,
+                'type': 'write',
+                'run_datetime': start_run_all,
+                'n_error_format': count_format,
+                'n_error_consistency': count_consistency,
+                'n_error_completeness': count_completeness,
+                'all_record': all_record,
+            }
+            
+        else:
+            return None
+
+        
+
+        # return count_format, count_consistency, count_completeness, all_record
+
+        
+
+
     def _run(
         self,
         pipeline: Pipeline,
@@ -108,8 +184,11 @@ class DsmRunner(AbstractRunner):
             Exception: in case of any downstream node failure.
         """
         token = get_token()
-        datanode = DataNode(token)
-        import pdb;pdb.set_trace()
+        datanode = DataNode(
+            token,
+            dataplatform_api_uri=DATAPLATFORM_API_URI,
+            object_storage_uri=OBJECT_STORAGE_URI,
+        )
         LOG_FOLDER = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
         validation_log_dir = 'logs/validation_logs/'
         
@@ -127,18 +206,19 @@ class DsmRunner(AbstractRunner):
         pipeline_detail = register_pipelines()
         
         # import pdb; pdb.set_trace()
-        last_output_dataset_name = list(pipeline.all_outputs())[-1]
+        output_dataset_name = pipeline.all_outputs()
         # pipeline_detail['payment_integration'].all_outputs()
         # output_dataset_names
-        
+        # import pdb; pdb.set_trace()
         pipeline_name = None
         for key, value in pipeline_detail.items():
             
-            if last_output_dataset_name in list(value.all_outputs()):
+            if output_dataset_name == value.all_outputs():
                 pipeline_name = key
                 break
         
-        
+        if pipeline_name == None:
+            raise Exception("To generate log, you cannot run sub-pipeline or specific node. Please remove --node param")
         
                 
         ## pipeline logs
@@ -151,19 +231,42 @@ class DsmRunner(AbstractRunner):
         # import pdb;pdb.set_trace()
         pipeline_path = os.path.join(PIPELINE_PROJECT_PATH, 'pipelines/', pipeline_name)
         commits = list(parse_commit_log(repo, pipeline_path))
-
+        # import pdb;pdb.set_trace()
         repo_path = repo.remotes.origin.url.split('.git')[0]
         last_commit_url = os.path.join(repo_path, '-/commit/', commits[0]['commit'])
+        
         last_editor = commits[0]['Author']   
         
+        ## get project detail
+        project_name = PROJECT_NAME
+        base_url = "https://api.discovery.dev.data.storemesh.com/api"
+        url = f"{base_url}/logs/run-pipeline/"
+        headers = {'Authorization': f'Bearer {token}'}
+
+
+        res = requests.get(f'{base_url}/logs/project/?search={project_name}', headers=headers)
+        project_list = res.json()
+        
+        try:
+            project_id = [ item['id'] for item in project_list if item['name'] == project_name ][0]
+        except:
+            raise Exception(f"Your PROJECT_NAME ('{project_name}') in 'src/config/project_setting.py' is not match with any project name in Data Discovery")
+           
+
         ## get pipeline detail
-        pipeline_id = 1
-
-
+        res = requests.get(f'{base_url}/logs/pipeline/?search={pipeline_name}&project={project_id}', headers=headers)
+        pipeline_list = res.json()
+        try:
+            pipeline_id = [ item['id'] for item in pipeline_list if item['name'] == pipeline_name ][0]
+        except:
+            raise Exception(f"Your pipeline_name('{pipeline_name}') in 'src/etl_pipeline/pipeline_registry.py' is not match with any pipeline name in Data Discovery")
+               
+        
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
         
         func_log_list = {}
 
+        
         for exec_index, node in enumerate(nodes):
             start_time = datetime.now()
             
@@ -217,6 +320,10 @@ class DsmRunner(AbstractRunner):
                 "Completed %d out of %d tasks", exec_index + 1, len(nodes)
             )
             
+        print("------------------SFinish run all node!!-----------------")
+
+        print("Write logs")
+
         ## data nodes detail        
         dataset_name_list = list(pipeline.data_sets())        
         datanode_detail = {}
@@ -261,8 +368,17 @@ class DsmRunner(AbstractRunner):
                     'source': dataset_name,
                     'target': node.name,
                 })
+
+                file_id = datanode_detail[dataset_name]['file_id']
+                folder_id = datanode_detail[dataset_name]['meta']['folder_id']
+                file_name = datanode_detail[dataset_name]['meta']['file_name']
+                
+                
+                log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read.csv')
+                all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_read_all_record.json')
                 
                 url_path = f"{LOG_FOLDER}/{datanode_detail[dataset_name]['file_id']}.parquet"
+                
                 
                 # monad input
                 monad_log_list[edge_id] = {
@@ -286,46 +402,66 @@ class DsmRunner(AbstractRunner):
                     'source': node.name,
                     'target': dataset_name,
                 })
+
+                monad_log_list[edge_id] = self._read_monad_logs(
+                    log_path=log_path, 
+                    all_record_path=all_record_path, 
+                    df_val_types=df_val_types,
+                    type='write',
+                    datanode_detail=datanode_detail,
+                    dataset_name=dataset_name,
+                    start_run_all=start_run_all,
+                    validation_log_dir=validation_log_dir,
+                )
                 
-                file_id = datanode_detail[dataset_name]['file_id']
-                folder_id = datanode_detail[dataset_name]['meta']['folder_id']
-                file_name = datanode_detail[dataset_name]['meta']['file_name']
+                # file_id = datanode_detail[dataset_name]['file_id']
+                # folder_id = datanode_detail[dataset_name]['meta']['folder_id']
+                # file_name = datanode_detail[dataset_name]['meta']['file_name']
                 
                 
-                log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_write.csv')
+                # log_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_write.csv')
+                # all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_write_all_record.json')
                 
                 
-                # log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
-                url_path = f"{LOG_FOLDER}/{file_id}.parquet"
+                # # log_file_id = datanode.get_file_id(name=f"{file_id}_write.parquet", directory_id=LOG_FOLDER)
+                # url_path = f"{LOG_FOLDER}/{file_id}.parquet"
                 
-                # import pdb;pdb.set_trace()
+                # # import pdb;pdb.set_trace()
                 
-                # ddf_log = datanode.read_ddf(file_id=log_file_id)
-                ddf_log = dd.read_csv(log_path)
-                
-                ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
-                
-                df_type_count = ddf_merge.groupby(['rule_type'])['pk'].nunique().compute()
-                count_format = df_type_count['format'] if 'format' in df_type_count else 0
-                count_consistency = df_type_count['consistency'] if 'consistency' in df_type_count else 0
-                count_completeness = df_type_count['completeness'] if 'completeness' in df_type_count  else 0
-                
-                # monad output
-                monad_log_list[edge_id] = {
-                    'file_id': datanode_detail[dataset_name]['file_id'],
-                    'name': dataset_name,
-                    'type': 'write',
-                    'run_datetime': start_run_all,
-                    'format_summary': count_format,
-                    'consistency_summary': count_consistency,
-                    'completeness_summary': count_completeness,
-                }
+                # # ddf_log = datanode.read_ddf(file_id=log_file_id)
+
+                # if os.path.exists(log_path):
+                #     count_format, count_consistency, count_completeness, all_record = self._read_monad_logs(
+                #         log_path=log_path, 
+                #         all_record_path=all_record_path, 
+                #         df_val_types=df_val_types,
+                #         type='write'
+                #         datanode_detail=datanode_detail,
+                #         dataset_name=dataset_name,
+                #         start_run_all=start_run_all,
+                #         edge_id=edge_id,
+                #     )
+
+                #     # monad output
+                #     monad_log_list[edge_id] = {
+                #         'file_id': datanode_detail[dataset_name]['file_id'],
+                #         'name': dataset_name,
+                #         'type': 'write',
+                #         'run_datetime': start_run_all,
+                #         'n_error_format': count_format,
+                #         'n_error_consistency': count_consistency,
+                #         'n_error_completeness': count_completeness,
+                #         'all_record': all_record,
+                #     }
+                    
+                # else:
+                #     monad_log_list[edge_id] = None
                 
         
         output_dict = {
             "pipeline": {
                 "name": pipeline_name,
-                "project": PROJECT_NAME,
+                "project": project_name,
                 "git": {
                     "commits": commits,
                     "current_branch_name": current_branch_name,
@@ -345,7 +481,7 @@ class DsmRunner(AbstractRunner):
         print('------------')
         end_run_all = datetime.now()
         
-        result_status = "SUCCESS" if is_run_all_success else "FAILED"
+        result_status = "SUCESS" if is_run_all_success else "FAILED"
         run_all_result = {
             'uuid': str(uuid.uuid4()),
             'pipeline': pipeline_id,
@@ -353,20 +489,18 @@ class DsmRunner(AbstractRunner):
             'end_time': end_run_all,
             # 'duration': str(end_run_all - start_run_all),
             'status': result_status,
-            'result': "result", #output_dict,
+            'result': output_dict,
             'last_editor': last_editor,
         }
-        
-        import pdb;pdb.set_trace()
+        # print(json.dumps(run_all_result, indent=4, default=str))
         
         json_str = json.dumps(run_all_result, indent=4, default=str)
         json_data = json.loads(json_str)
-        print(json_data)
+        # print(json_data)
         
-        base_url = "https://api.dev.discovery.data.storemesh.com/api"
-        url = f"{base_url}/logs/run-pipeline/"
-        headers = {'Authorization': f'Bearer {token}'}
-        r = requests.post(url, data=json_data, headers=headers)
+        res = requests.post(url, json=json_data, headers=headers)
+
+        print('ddd')
         
         
         # {

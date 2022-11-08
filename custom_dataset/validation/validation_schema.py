@@ -85,7 +85,7 @@ def generate_schema(config):
 
     return schema
 
-def validate_data(ddf, config, file_id, start_time):
+def validate_data(ddf, config):
     config_validated = Configs(**config)
     validated_config = config_validated.dict()
 
@@ -94,15 +94,15 @@ def validate_data(ddf, config, file_id, start_time):
     ddf_result = ddf.map_partitions(validate_schema, schema, pk=validated_config['pk_column'])
     ddf_critical_error = ddf_result[ddf_result['pk'].isnull()].drop_duplicates()
     ddf_critical_error = ddf_critical_error.drop(columns=['pk'])
-    ddf_critical_error['file_id'] = file_id
+    # ddf_critical_error['file_id'] = file_id
 
     ddf_rule_error = ddf_result[~ddf_result['pk'].isnull()]
     ddf_rule_error = ddf_rule_error.drop(columns=['schema_context'])
-    ddf_rule_error['file_id'] = file_id
+    # ddf_rule_error['file_id'] = file_id
     
-    ddf_rule_error['start_time'] = start_time
+    # ddf_rule_error['start_time'] = start_time
     ddf_critical_error = ddf_critical_error[['schema_context', 'column', 'input', 'rule_name']]
-    ddf_rule_error = ddf_rule_error[['file_id', 'start_time', 'pk', 'column', 'input', 'rule_name']]
+    ddf_rule_error = ddf_rule_error[['pk', 'column', 'input', 'rule_name']]
 
     # add is_required
     is_required_list = [ {'column': key, 'is_required': value['is_required'] } for key, value in validated_config['columns'].items()]

@@ -14,6 +14,7 @@ import pandas as pd
 from dsmlibrary.datanode import DataNode, DatabaseManagement
 from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean
 from sqlalchemy import sql
+import json
 from datetime import date
 import datetime
 import time
@@ -68,6 +69,58 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         )
         return data_node
 
+    def _validate_data(self, ddf, type):
+        folder_path = 'logs/validation_logs/'
+        save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}.csv')
+        all_record_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}_all_record.json')
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path, exist_ok=True)
+
+        if os.path.exists(save_path):
+            os.remove(save_path) # clear previous validation logs
+
+        if os.path.exists(all_record_path):
+            os.remove(all_record_path) # clear previous validation logs
+
+
+        if self._config:   
+            ddf_critical_error, ddf_rule_error = validate_data(
+                ddf, 
+                config=self._config, 
+            )
+
+            df_critical_error, df_rule_error, n_original_row = dask.compute(
+                ddf_critical_error,
+                ddf_rule_error,
+                ddf.shape[0]
+            )
+
+            all_record = { 'all_record': n_original_row}
+            with open(all_record_path, 'w') as f:
+                json.dump(all_record, f)
+
+            if df_critical_error.shape[0] > 0:
+                columns = df_critical_error.columns
+                df_critical_error = df_critical_error.reset_index().drop(columns=['index'])
+                raise ValidationException(
+                    f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
+                    f"df_critical_error : \n{df_critical_error}"
+                )
+                
+            if df_rule_error.shape[0] > 0:
+                
+                
+                # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
+                df_rule_error.to_csv(save_path, index=False)
+                
+                # data_node.write(df=df_rule_error, directory=293, name=f"{file_id}_write", description="", replace=True, profiling=True, lineage=[file_id])
+
+                # remove error columns
+                pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
+                ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
+
+        return ddf
+
         
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = self._get_data_node()
@@ -93,60 +146,26 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         
         data_node = self._get_data_node()
         file_id = None
-        try:
-            file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-        except Exception as e:
-            print(e)
-            write_dummy_file(self._file_name, self._folder_id, data_node)
+        # try:
+        #     file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        # except Exception as e:
+        #     print(e)
+            # write_dummy_file(self._file_name, self._folder_id, data_node)
 
-        if self._config and file_id:            
-            # pass
+        ddf = self._validate_data(ddf, type='write')
+
+        # else:
             
-            ddf_critical_error, ddf_rule_error = validate_data(
-                ddf, 
-                config=self._config, 
-                file_id=file_id, 
-                start_time=start_time
-            )
-
-            df_critical_error, df_rule_error, n_original_row = dask.compute(
-                ddf_critical_error,
-                ddf_rule_error,
-                ddf.shape[0]
-            )
-
-            if df_critical_error.shape[0] > 0:
-                columns = df_critical_error.columns
-                df_critical_error = df_critical_error.reset_index().drop(columns=['index'])
-                raise ValidationException(
-                    f"'{self._file_name}' have critical errors and is not allowed to save data. For fixing, see the detail below\n"
-                    f"df_critical_error : \n{df_critical_error}"
-                )
-                
-            if df_rule_error.shape[0] > 0:
-                folder_path = 'logs/validation_logs/'
-                save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_write.csv')
-                if not os.path.exists(folder_path):
-                    os.makedirs(folder_path, exist_ok=True)
-                
-                # df_rule_error.to_csv(path_save, index=False, mode='a', header=not os.path.exists(path_save))
-                df_rule_error.to_csv(save_path, index=False)
-                
-                
-                # import pdb;pdb.set_trace()
-                data_node.write(df=df_rule_error, directory=293, name=f"{file_id}_write", description="", replace=True, profiling=True, lineage=[file_id])
-
-                # remove error columns
-                pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
-                ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
-
-        else:
-            n_original_row = dask.compute(ddf.shape[0])[0]
+        #     n_original_row = dask.compute(ddf.shape[0])[0]
 
         with ProgressBar():
             data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
-       
+        # read validation logs
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        data_node.read_ddf(file_id=file_id)
+        ddf = self._validate_data(ddf, type='read')
+
         # end_time = datetime.datetime.now()
         # logs = {
         #     'file_id': file_id,
