@@ -28,7 +28,7 @@ import os
 import dask.dataframe as dd
 from dsmlibrary.datanode import DataNode
 
-from etl_pipeline.pipeline_registry import register_pipelines
+from src.etl_pipeline.pipeline_registry import register_pipelines
 from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
@@ -439,12 +439,12 @@ class DsmRunner(AbstractRunner):
             "function_log": func_log_list,
         }
         # print(output_dict)
-        print(json.dumps(output_dict, indent=4, default=str))
+        
         
         print('------------')
         end_run_all = datetime.now()
         
-        result_status = "SUCESS" if is_run_all_success else "FAILED"
+        result_status = "SUCCESS" if is_run_all_success else "FAILED"
         run_all_result = {
             'uuid': str(uuid.uuid4()),
             'pipeline': pipeline_id,
@@ -458,6 +458,6 @@ class DsmRunner(AbstractRunner):
         
         json_str = json.dumps(run_all_result, indent=4, default=str)
         json_data = json.loads(json_str)
-        
+        print(json_str)
         res = requests.post(url, json=json_data, headers=headers)
         print(res)
