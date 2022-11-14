@@ -26,13 +26,14 @@ import pandas as pd
 import time
 import os
 import dask.dataframe as dd
+from dsmlibrary.datanode import DataNode
 
 from src.etl_pipeline.pipeline_registry import register_pipelines
 from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
 from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
-from utils.logs_generator import parse_commit_log, gen_log_start, gen_log_finish, get_pipeline_name
+from utils.logs_generator import parse_commit_log, gen_log_start, gen_log_finish
        
 
 class DsmRunner(AbstractRunner):
@@ -150,26 +151,97 @@ class DsmRunner(AbstractRunner):
         Raises:
             Exception: in case of any downstream node failure.
         """
-
-        # log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
-        # validation_log_dir = 'logs/validation_logs/'
+        token = get_token()
+        datanode = DataNode(
+            token,
+            dataplatform_api_uri=DATAPLATFORM_API_URI,
+            object_storage_uri=OBJECT_STORAGE_URI,
+        )
+        log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
+        validation_log_dir = 'logs/validation_logs/'
         
         
-        # val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in rules.items() ]
-        # df_val_types = pd.DataFrame(val_types)
+        val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in rules.items() ]
+        df_val_types = pd.DataFrame(val_types)
         
-        # start_run_all = datetime.now()
-        # is_run_all_success = True
+        start_run_all = datetime.now()
+        is_run_all_success = True
         
-             
-        pipeline_name = get_pipeline_name(pipeline=pipeline)            
-        gen_log_start(pipeline_name=pipeline_name)
-
-        import pdb;pdb.set_trace()
-               
-        # kedro default
         nodes = pipeline.nodes
         done_nodes = set()
+        
+
+
+
+
+
+        
+        pipeline_detail = register_pipelines()
+        
+        # import pdb; pdb.set_trace()
+        output_dataset_name = pipeline.all_outputs()
+        # pipeline_detail['payment_integration'].all_outputs()
+        # output_dataset_names
+        # import pdb; pdb.set_trace()
+        pipeline_name = None
+        for key, value in pipeline_detail.items():
+            
+            if output_dataset_name == value.all_outputs():
+                pipeline_name = key
+                break
+        
+        if pipeline_name == None:
+            raise Exception("To generate log, you cannot run sub-pipeline or specific node. Please remove --node param")
+        
+
+        gen_log_start(pipeline_name=pipeline_name)
+
+
+
+
+
+                
+        ## pipeline logs
+        repo = git.Repo(search_parent_directories=True)
+        branch = repo.active_branch
+        current_branch_name = branch.name
+        # hexsha = repo.head.object.hexsha        
+        
+        
+        # import pdb;pdb.set_trace()
+        pipeline_path = os.path.join(PIPELINE_PROJECT_PATH, 'pipelines/', pipeline_name)
+        commits = list(parse_commit_log(repo, pipeline_path))
+        # import pdb;pdb.set_trace()
+        repo_path = repo.remotes.origin.url.split('.git')[0]
+        last_commit_url = os.path.join(repo_path, '-/commit/', commits[0]['commit'])
+        
+        last_editor = commits[0]['Author']   
+        
+        ## get project detail
+        project_name = PROJECT_NAME
+        base_url = "https://api.discovery.dev.data.storemesh.com/api"
+        url = f"{base_url}/logs/run-pipeline/"
+        headers = {'Authorization': f'Bearer {token}'}
+
+
+        res = requests.get(f'{base_url}/logs/project/?search={project_name}', headers=headers)
+        project_list = res.json()
+        
+        try:
+            project_id = [ item['id'] for item in project_list if item['name'] == project_name ][0]
+        except:
+            raise Exception(f"Your PROJECT_NAME ('{project_name}') in 'src/config/project_setting.py' is not match with any project name in Data Discovery")
+           
+
+        ## get pipeline detail
+        res = requests.get(f'{base_url}/logs/pipeline/?search={pipeline_name}&project={project_id}', headers=headers)
+        pipeline_list = res.json()
+        try:
+            pipeline_id = [ item['id'] for item in pipeline_list if item['name'] == pipeline_name ][0]
+        except:
+            raise Exception(f"Your pipeline_name('{pipeline_name}') in 'src/etl_pipeline/pipeline_registry.py' is not match with any pipeline name in Data Discovery")
+               
+        
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
         
         func_log_list = {}
