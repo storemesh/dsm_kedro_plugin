@@ -378,7 +378,8 @@ def _read_monad_logs(
                 directory_id=log_folder_id, 
                 file_path=log_path, 
                 description=f"log file of '{file_name}' ({file_id})", 
-                lineage=[file_id]
+                lineage=[file_id],
+                replace=True,
             )
             time.sleep(1)
             log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
