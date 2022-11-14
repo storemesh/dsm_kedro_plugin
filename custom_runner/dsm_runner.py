@@ -8,12 +8,15 @@ sys.path.append(os.getcwd())
 
 from collections import Counter
 from itertools import chain
+from pathlib import Path
 
 from pluggy import PluginManager
 
 from kedro.io import AbstractDataSet, DataCatalog, MemoryDataSet
 from kedro.pipeline import Pipeline
 from kedro.runner.runner import AbstractRunner, run_node
+from kedro.framework.session import KedroSession
+from kedro.framework.startup import bootstrap_project
 
 import requests
 import git
@@ -75,7 +78,7 @@ class WriteFullLogRunner(AbstractRunner):
         with open(path, 'w') as f:
             json.dump(json_result, f)
 
-    def _run_all_node(self, pipeline, pipeline_name, catalog, hook_manager, session_id):
+    def _run_all_node(self, pipeline, pipeline_name, catalog, hook_manager, session_id, send_logs=False):
         func_log_list = {}
         datanode, token = get_dsm_datanode()
         log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
@@ -85,7 +88,7 @@ class WriteFullLogRunner(AbstractRunner):
         nodes = pipeline.nodes
         done_nodes = set()
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
-
+        error_exception = None
         for exec_index, node in enumerate(nodes):
             start_time = datetime.now()
             
@@ -94,11 +97,12 @@ class WriteFullLogRunner(AbstractRunner):
             try:
                 run_node(node, catalog, hook_manager, self._is_async, session_id)
                 done_nodes.add(node)
-            except Exception:
+            except Exception as e:
                 is_success = False
                 is_run_all_success = False
                 self._suggest_resume_scenario(pipeline, done_nodes, catalog)
                 error_log = traceback.format_exc()
+                error_exception = e
                 
             ##### function log
             end_time = datetime.now()
@@ -133,12 +137,18 @@ class WriteFullLogRunner(AbstractRunner):
             }
 
             if not is_success:
+                print('------------fail-------------')
+                # print(error_log)
                 self._write_function_json(
                     path=save_func_path, 
                     json_data=func_log_list,
                     status="FAILED",
                 )
-                raise   
+
+                if send_logs:
+                    gen_log_finish(pipeline_name=pipeline_name)
+
+                raise error_exception
                       
             # decrement load counts and release any data sets we've finished with
             for data_set in node.inputs:
@@ -189,6 +199,7 @@ class WriteFullLogRunner(AbstractRunner):
             catalog=catalog, 
             hook_manager=hook_manager, 
             session_id=session_id,
+            send_logs=True,
         )
         
         gen_log_finish(pipeline_name=pipeline_name)
@@ -224,4 +235,5 @@ class WriteFunctionLogRunner(WriteFullLogRunner):
             catalog=catalog, 
             hook_manager=hook_manager, 
             session_id=session_id,
+            send_logs=True,
         )

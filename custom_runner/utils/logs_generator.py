@@ -273,8 +273,10 @@ def get_pipeline_name(pipeline):
     pipeline_name = None
 
     for key, value in pipeline_detail.items():
-        
-        if output_dataset_name == value.all_outputs():
+        item_outputs = value.all_outputs()
+        # if output_dataset_name == value.all_outputs():
+        # import pdb;pdb.set_trace()
+        if output_dataset_name.intersection(item_outputs) == output_dataset_name:
             pipeline_name = key
             break
     
