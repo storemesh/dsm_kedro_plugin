@@ -90,7 +90,8 @@ def gen_log_start(pipeline_name):
 
     with open(start_pipeline_path, 'w') as f:
         json.dump(json_data, f)
-
+        
+    print(json_data)
     ### post to server
     res = requests.post(run_pipeline_url, json=json_data, headers=headers)
     print(res)
