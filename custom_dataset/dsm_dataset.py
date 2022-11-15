@@ -155,6 +155,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         
         ddf = data_node.read_ddf(file_id=file_id)
         self.meta['file_id'] = file_id
+        self.meta['folder_id'] = folder_id
         
         return (ddf, self.meta)
 
@@ -164,7 +165,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         lineage_list = [ item['file_id'] for item in meta_list]
         
         data_node = self._get_data_node()
-        folder_id = self._get_folder_id(data_node)
+        self._folder_id = self._get_folder_id(data_node)
         file_id = None
         # try:
         #     file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
@@ -179,10 +180,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         #     n_original_row = dask.compute(ddf.shape[0])[0]
 
         with ProgressBar():
-            data_node.write(df=ddf, directory=folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+            data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
         # read validation logs
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         data_node.read_ddf(file_id=file_id)
         ddf = self._validate_data(ddf, type='read')
 
