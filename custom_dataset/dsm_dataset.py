@@ -21,7 +21,7 @@ import time
 
 
 from .validation.validation_schema import validate_data, ValidationException
-from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
+from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID
 # from src.generate_datanode.utils.utils import write_dummy_file
 
 def write_dummy_file(file_name, directory_id, data_node):
@@ -41,8 +41,9 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     def __init__(
              self, 
              credentials: Dict[str, Any],        
-             folder_id: int,
              file_name: str,
+             folder_id: int = None,
+             project_folder_name: str = None,
              file_id: int = None,
              config: Dict = None,      
              viz_widgets = None,
@@ -51,6 +52,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self._token = credentials['token']
         self._file_id = file_id
         self._folder_id = folder_id
+        self._project_folder_name = project_folder_name
         self._file_name = file_name
         self._config = config           
         
@@ -60,6 +62,21 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             "file_name": file_name,
             "config": config,
         }
+
+        self._validate_input()
+
+    def _validate_input(self):
+        if (self._folder_id == None) and (self._project_folder_name == None):
+            raise Exception("'folder_id' and 'project_folder_name' are None. One of this should be given")
+
+    def _get_folder_id(self, datanode):
+        if self._folder_id:
+            folder_id = self._folder_id
+        elif self._project_folder_name :            
+            folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name=self._project_folder_name)
+        else:
+            raise Exception("'folder_id' and 'project_folder_name' are None. One of this should be given")
+        return folder_id
 
     def _get_data_node(self):
         data_node = DataNode(
@@ -131,8 +148,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         #         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         #     except Exception as e:
         #         print("    Exception:", e)
-        #         return None
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        #         return None        
+        folder_id = self._get_folder_id(data_node)
+
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
         
         ddf = data_node.read_ddf(file_id=file_id)
         self.meta['file_id'] = file_id
@@ -145,6 +164,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         lineage_list = [ item['file_id'] for item in meta_list]
         
         data_node = self._get_data_node()
+        folder_id = self._get_folder_id(data_node)
         file_id = None
         # try:
         #     file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
@@ -159,10 +179,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         #     n_original_row = dask.compute(ddf.shape[0])[0]
 
         with ProgressBar():
-            data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+            data_node.write(df=ddf, directory=folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
         # read validation logs
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
         data_node.read_ddf(file_id=file_id)
         ddf = self._validate_data(ddf, type='read')
 

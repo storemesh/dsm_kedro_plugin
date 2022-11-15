@@ -243,6 +243,7 @@ def gen_log_finish(pipeline_name):
 def _get_header(token):
     headers = {'Authorization': f'Bearer {token}'}
     return headers
+
 def get_pipeline_id(project_name, pipeline_name, token):
     ## get project detail    
     
@@ -363,8 +364,7 @@ def _read_monad_logs(
         log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
 
         if os.path.exists(log_path):
-            ddf_log = dd.read_csv(log_path)
-            
+            ddf_log = dd.read_csv(log_path)            
             
             ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
             
@@ -375,17 +375,23 @@ def _read_monad_logs(
             
             with open(all_record_path) as data_file:
                 all_record = json.load(data_file)['all_record']
-                
+            
+
+            # file_id = datanode.get_file_id(name=f"{log_filename}.listDataNode", directory_id=log_folder_id)
+
+            res = datanode.writeListDataNode(df=ddf_log, directory_id=log_folder_id, name=log_filename, replace=True)
+            listdatanode_file_id = res['file_id']
+            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]
             # write log file
-            datanode.upload_file(
-                directory_id=log_folder_id, 
-                file_path=log_path, 
-                description=f"log file of '{file_name}' ({file_id})", 
-                lineage=[file_id],
-                replace=True,
-            )
-            time.sleep(1)
-            log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
+            # datanode.upload_file(
+            #     directory_id=log_folder_id, 
+            #     file_path=log_path, 
+            #     description=f"log file of '{file_name}' ({file_id})", 
+            #     lineage=[file_id],
+            #     replace=True,
+            # )
+            # time.sleep(1)
+            # log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
             # datanode.write(df=ddf_merge, directory=log_folder_id, name=f'{folder_id}_{file_name}_{type}', replace=True, lineage=)
                 
             
