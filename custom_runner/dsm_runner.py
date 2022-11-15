@@ -116,14 +116,14 @@ class WriteFullLogRunner(AbstractRunner):
                 f.write(error_log)
 
             # write log file
-            datanode.upload_file(
+            res = datanode.writeListFile(
                 directory_id=log_folder_id, 
                 file_path=log_path, 
                 description=f"log file of '{node.name}'", 
-                replace=True,
+                replace=True
             )
-            time.sleep(1)
-            log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
+            listdatanode_file_id = res['file_id']
+            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]
             
             func_log_list[node.name] = {
                 "func_id": node.name,
@@ -138,7 +138,6 @@ class WriteFullLogRunner(AbstractRunner):
 
             if not is_success:
                 print('------------fail-------------')
-                # print(error_log)
                 self._write_function_json(
                     path=save_func_path, 
                     json_data=func_log_list,
