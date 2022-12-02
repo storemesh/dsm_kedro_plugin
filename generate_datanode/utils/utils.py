@@ -15,7 +15,7 @@ import os
 sys.path.append(os.getcwd())
 
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import KEDRO_PROJECT_BASE
-from src.config.config_database import db_connection, db_schema
+# from src.config.config_database import db_connection, db_schema
 
 map_dict = {
     Float: 'float',
@@ -65,11 +65,11 @@ def get_numpy_schema(class_obj):
 
 
 
-def find_system_detail(database_id):
-    return db_connection[database_id]
+# def find_system_detail(database_id):
+#     return db_connection[database_id]
 
-def get_database_schema(database_id):
-    return db_schema[database_id]
+# def get_database_schema(database_id):
+#     return db_schema[database_id]
 
 def find_pk_column(class_obj):
     pk_column = None

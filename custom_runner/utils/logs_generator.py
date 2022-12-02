@@ -16,9 +16,11 @@ from kedro.framework.startup import bootstrap_project
 
 from src.etl_pipeline.pipeline_registry import register_pipelines
 from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
-from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
+# from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
+
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
 from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
+from src.config.validation_rules import rules
 
 start_pipeline_folder = 'logs/validation_logs/start'
 validation_log_dir = 'logs/validation_logs/'
@@ -95,6 +97,9 @@ def gen_log_start(pipeline_name):
     ### post to server
     res = requests.post(run_pipeline_url, json=json_data, headers=headers)
     print(res)
+    if res.status_code > 201:
+        print(res.json())
+        raise Exception('cannot send start logs to server')
     
 
 def gen_log_finish(pipeline_name):
@@ -127,7 +132,19 @@ def gen_log_finish(pipeline_name):
     with open(save_func_path) as f:
         run_function_result = json.load(f)
 
-    val_types = [ { 'rule_name': value['func'].name, 'rule_type': value['type'] } for key, value in rules.items() ]
+
+    val_types = []
+    for key, value in rules.items():
+        if value['func'].error:
+            name_error_func = value['func'].error
+        else:
+            name_error_func = value['func'].name
+        val_types.append({ 
+            'rule_name': name_error_func, 
+            'rule_type': value['type'] 
+        })
+
+    val_types.append({ 'rule_name': 'not_nullable', 'rule_type': 'completeness'})
     df_val_types = pd.DataFrame(val_types)
 
     ## data nodes detail        
@@ -135,13 +152,26 @@ def gen_log_finish(pipeline_name):
     datanode_detail = {}
     
     for dataset_name in dataset_name_list:
-        _, dataset_meta = catalog.load(dataset_name)
+        data = catalog.load(dataset_name)
         
-        datanode_detail[dataset_name] = {
-            'id': dataset_name,
-            'file_id': dataset_meta['file_id'],
-            'meta': dataset_meta,
-        }
+        if type(data) == tuple:
+            _, dataset_meta = data
+            datanode_detail[dataset_name] = {
+                'id': dataset_name,
+                'file_id': dataset_meta['file_id'],
+                'meta': dataset_meta,
+            }
+        else:
+            datanode_detail[dataset_name] = {
+                'id': dataset_name,
+                'file_id': None,
+                'meta': {
+                    "config": {},
+                    "file_id": None,
+                    "file_name": None,
+                    "folder_id": None
+                },
+            }
     
 
     ## function detail, input_edges, output_edges, monad input and monad output
@@ -239,6 +269,10 @@ def gen_log_finish(pipeline_name):
     res = requests.patch(patch_url, json=json_data, headers=headers)
     
     print(res)
+
+    if res.status_code > 201:
+        print(res.json())
+        raise Exception('cannot send end logs to server')
     
 def _get_header(token):
     headers = {'Authorization': f'Bearer {token}'}
@@ -299,24 +333,35 @@ def get_dsm_datanode():
 
 def get_git_detail(pipeline_name):
     ## pipeline logs
-    repo = git.Repo(search_parent_directories=True)
-    branch = repo.active_branch
-    current_branch_name = branch.name
 
-    pipeline_path = os.path.join(PIPELINE_PROJECT_PATH, 'pipelines/', pipeline_name)
-    commits = list(parse_commit_log(repo, pipeline_path))
-    
-    repo_path = repo.remotes.origin.url.split('.git')[0]
-    last_commit_url = os.path.join(repo_path, '-/commit/', commits[0]['commit'])
-    
-    last_editor = commits[0]['Author']   
+    try:
 
-    git_detail = {
-        "commits": commits,
-        "current_branch_name": current_branch_name,
-        "last_commit_url": last_commit_url,
-        "last_editor": last_editor,
-    }
+        repo = git.Repo(search_parent_directories=True)
+        branch = repo.active_branch
+        current_branch_name = branch.name
+
+        pipeline_path = os.path.join(PIPELINE_PROJECT_PATH, 'pipelines/', pipeline_name)
+        commits = list(parse_commit_log(repo, pipeline_path))
+        
+        repo_path = repo.remotes.origin.url.split('.git')[0]
+        last_commit_url = os.path.join(repo_path, '-/commit/', commits[0]['commit'])
+        
+        last_editor = commits[0]['Author']   
+
+        git_detail = {
+            "commits": commits,
+            "current_branch_name": current_branch_name,
+            "last_commit_url": last_commit_url,
+            "last_editor": last_editor,
+        }
+    except Exception as e:
+        print(' Exception:', e)
+        git_detail = {
+            "commits": [],
+            "current_branch_name": "-",
+            "last_commit_url": "-",
+            "last_editor": "-",
+        }
     return git_detail
 
 def parse_commit_log(repo, *params):
@@ -353,6 +398,9 @@ def _read_monad_logs(
         validation_log_dir,
         datanode,
     ):
+        if datanode_detail[dataset_name]['meta']['file_name'] == None:
+            return None
+
         file_id = datanode_detail[dataset_name]['file_id']
         folder_id = datanode_detail[dataset_name]['meta']['folder_id']
         file_name = datanode_detail[dataset_name]['meta']['file_name']
@@ -364,7 +412,7 @@ def _read_monad_logs(
         log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
 
         if os.path.exists(log_path):
-            ddf_log = dd.read_csv(log_path)            
+            ddf_log = dd.read_csv(log_path)
             
             ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
             
@@ -401,10 +449,11 @@ def _read_monad_logs(
                 'file_id': datanode_detail[dataset_name]['file_id'],
                 'name': dataset_name,
                 'type': type,
+                'data_type': 'Parquet',
                 'run_datetime': start_run_all,
-                'n_error_format': count_format,
-                'n_error_consistency': count_consistency,
-                'n_error_completeness': count_completeness,
+                'n_error_format': int(count_format),
+                'n_error_consistency': int(count_consistency),
+                'n_error_completeness': int(count_completeness),
                 'all_record': all_record,
                 'logs_file_id': log_file_id,
             }

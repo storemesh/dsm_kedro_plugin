@@ -12,7 +12,6 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import pandas as pd
 from dsmlibrary.datanode import DataNode, DatabaseManagement
-from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean
 from sqlalchemy import sql
 import json
 from datetime import date
@@ -20,7 +19,7 @@ import datetime
 import time
 
 
-from .validation.validation_schema import validate_data, ValidationException
+from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID
 # from src.generate_datanode.utils.utils import write_dummy_file
 
@@ -282,12 +281,13 @@ class DsmDataNodeAppend(DsmDataNode):
     
 class DsmSQLDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
+        
         data_node = self._get_data_node()
         if self._file_id:
             file_id = self._file_id
-        else:
+        else:            
             file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=self._folder_id)
-        
+            
         ddf = data_node.read_ddf(file_id=file_id)        
             
         self.meta['file_id'] = file_id
@@ -299,8 +299,6 @@ class DsmSQLDataNode(DsmDataNode):
 
     def _describe(self) -> Dict[str, Any]:
         pass
-    
-    
     
 class DsmAPIDataSet(APIDataSet):
     def __init__(
@@ -316,6 +314,4 @@ class DsmAPIDataSet(APIDataSet):
             self._request_args['headers'].update(credentials['headers'])
         
         self._request_args['auth'] = None
-        
-        
-    
+

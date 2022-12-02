@@ -23,3 +23,4 @@ if __name__ == "__main__":
         token=token, 
         append=APPEND_MODE
     )
+    print('\ngenerate integration is successful!!')

@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.getcwd())
+
 import pandera as pa
 import pandas as pd
 from pydantic import BaseModel
@@ -5,11 +9,12 @@ import dask.dataframe as dd
 import datetime 
 from typing import Literal, List, Dict
 
-from .validation_rules import rules
+# from .validation_rules import rules
+from src.config.validation_rules import rules
 
 ## pydantic schema
 class Column(BaseModel):    
-    data_type: Literal['int', 'str', 'float','float64', 'int32', 'Int32','Int64', 'Float32', 'datetime','datetime64[ns]','datetime64[ms]','datetime64[s]', 'bool','long']
+    data_type: Literal['int', 'str', 'string', 'float','float64', 'int32', 'Int32','Int64', 'Float32', 'datetime','datetime64[ns]','datetime64[ms]','datetime64[s]', 'bool','long']
     is_required: bool = False
     nullable: bool = False
     validation_rule: List[int] = []
@@ -76,7 +81,7 @@ class ValidationException(Exception):
 
 def generate_schema(config):
     schema_dict = {}
-    for key, value in config['columns'].items():     
+    for key, value in config['columns'].items():
         validation_rules = [rules[validation_id]['func'] for validation_id in value['validation_rule']]
         schema_dict[key] = pa.Column(value['data_type'], nullable=value['nullable'], checks=validation_rules)
 

@@ -32,3 +32,4 @@ if __name__ == "__main__":
         write_mode=WRITE_MODE,
         overwrite_exist_node=overwrite_exist_node,
     )
+    print('\ngenerate landing is successful!!')

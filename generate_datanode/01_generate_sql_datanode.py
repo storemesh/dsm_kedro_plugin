@@ -27,3 +27,4 @@ if __name__ == "__main__":
         token=token, 
         write_mode=WRITE_MODE
     )
+    print('\ngenerate sql datanode is successful!!')

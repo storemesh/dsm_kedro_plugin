@@ -11,28 +11,44 @@ import tempfile
 from importlib import util
 import importlib.machinery
 
-from .utils import find_system_detail, camel_case, find_pk_column, get_numpy_schema, get_database_schema, md5hash, get_env_var, create_file_if_not_exist
+from .utils import camel_case, find_pk_column, get_numpy_schema, md5hash, get_env_var, create_file_if_not_exist
 from generate_setting import KEDRO_PROJECT_BASE, JINJA_PATH, SQL_DATANODE_CATALOG_PATH, LANDING_CATALOG_PATH, INTEGRATION_CATALOG_PATH
 
+from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
 
 def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_name, token, write_mode=False):
     if write_mode:
         with open(SQL_DATANODE_CATALOG_PATH, 'w') as f:
             f.write('')
 
-    database = DatabaseManagement(token=token)
-    data_node = DataNode(token)
+    database = DatabaseManagement(
+        token=token,
+        dataplatform_api_uri=DATAPLATFORM_API_URI,
+        object_storage_uri=OBJECT_STORAGE_URI,
+    )
+    data_node = DataNode(
+        token, 
+        dataplatform_api_uri=DATAPLATFORM_API_URI,
+        object_storage_uri=OBJECT_STORAGE_URI,
+    )
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
     
     for database_id, table_list in source_table.items():
         # exec to define class object         
-        table_id = get_database_schema(database_id)
-        meta, schema = database.get_table_schema(table_id=table_id) # get_database_schema(database_id)
+        # table_id = get_database_schema(database_id)
+        # meta, schema = database.get_table_schema(table_id=table_id) # get_database_schema(database_id)
+        # exec(schema, globals())
+        # database_name = find_system_detail(database_id)
+        # database_name = database_name.replace(' ', '_')
+        print(f'--- dabase id: {database_id} ----- ')
+        # exec to define class object                 
+        database_meta, schema = database.get_database_schema(database_id=database_id)
         exec(schema, globals())
-        
-        for table_name in table_list:
-            database_name = find_system_detail(database_id)
-            database_name = database_name.replace(' ', '_')
+
+        database_name = database_meta['name']
+        database_name = database_name.replace(' ', '_')
+
+        for table_name in table_list:            
             catalog_name = f'SQLDataNode___{database_name}___{table_name}'
             camel_case_table_name = camel_case(table_name)   
 
@@ -46,10 +62,9 @@ def query():
             meta, pk_column = get_numpy_schema(table_class_obj)   
 
             database.write_sql_query(
-                # df=ddf,
                 query_function=query_template,
                 directory_id=sql_datanode_folder_id, 
-                table_id=table_id, 
+                database_id=database_id, 
                 pk_column=pk_column, 
                 name=catalog_name, 
                 meta=meta,
@@ -108,19 +123,30 @@ def generate_landing_pipeline(
 #             f.write('')
 
     node_list = []
-    data_node = DataNode(token)
+    database = DatabaseManagement(
+        token=token,
+        dataplatform_api_uri=DATAPLATFORM_API_URI,
+        object_storage_uri=OBJECT_STORAGE_URI,
+    )
+    data_node = DataNode(
+        token, 
+        dataplatform_api_uri=DATAPLATFORM_API_URI,
+        object_storage_uri=OBJECT_STORAGE_URI,
+    )
+
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
     landing_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=landing_folder_name)
     
     for database_id, table_list in source_table.items():
+        database_meta, schema = database.get_database_schema(database_id=database_id)
+        database_name = database_meta['name']
+        database_name = database_name.replace(' ', '_')
         for table_name in table_list:     
             check_generate_file = True     
             if generate_source_dict != None:
                 if (not database_id in generate_source_dict) or (not table_name in generate_source_dict[database_id]):
                     check_generate_file = False
 
-            database_name = find_system_detail(database_id)
-            database_name = database_name.replace(' ', '_')
             sql_query_catalog_name = f'SQLDataNode___{database_name}___{table_name}'
             landing_catalog_name = f'landing___{database_name}___{table_name}'
             # landing_latest_catalog_name = f'landing___{database_name}___{table_name}___latest'
@@ -192,7 +218,11 @@ def generate_integration_catalogs(
         f.write('')    
 
     node_list = []
-    data_node = DataNode(token)
+    data_node = DataNode(
+        token, 
+        dataplatform_api_uri=DATAPLATFORM_API_URI,
+        object_storage_uri=OBJECT_STORAGE_URI,
+    )
     integration_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=integration_folder_name)
     
     for table_name, config in integration_table.items():  

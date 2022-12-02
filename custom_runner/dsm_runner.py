@@ -30,10 +30,9 @@ import time
 import os
 import dask.dataframe as dd
 
-from src.etl_pipeline.pipeline_registry import register_pipelines
-from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
-from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
-from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
+# from src.etl_pipeline.pipeline_registry import register_pipelines
+# from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
+# from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
 from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
 from .utils.logs_generator import parse_commit_log, gen_log_start, gen_log_finish, get_pipeline_name, get_dsm_datanode, validation_log_dir
 
