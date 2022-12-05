@@ -16,11 +16,13 @@ from src.config.validation_rules import rules
 class Column(BaseModel):    
     data_type: Literal['int', 'str', 'string', 'float','float64', 'int32', 'Int32','Int64', 'Float32', 'datetime','datetime64[ns]','datetime64[ms]','datetime64[s]', 'bool','long']
     is_required: bool = False
-    nullable: bool = False
+    nullable: bool = False    
     validation_rule: List[int] = []
 
 class Configs(BaseModel):
     columns: Dict[str, Column] = []
+    is_strict: bool = False
+    validation_rule: List[int] = []
     pk_column: str
 
 
@@ -85,7 +87,13 @@ def generate_schema(config):
         validation_rules = [rules[validation_id]['func'] for validation_id in value['validation_rule']]
         schema_dict[key] = pa.Column(value['data_type'], nullable=value['nullable'], checks=validation_rules)
 
-    schema = pa.DataFrameSchema(schema_dict, strict=True)
+    
+    dataframe_validation_rules = [rules[validation_id]['func'] for validation_id in config['validation_rule']]
+    schema = pa.DataFrameSchema(
+        schema_dict, 
+        strict=config['is_strict'], 
+        checks=dataframe_validation_rules,
+    )
     # index=pa.Index(str)
 
     return schema
@@ -93,8 +101,10 @@ def generate_schema(config):
 def validate_data(ddf, config):
     config_validated = Configs(**config)
     validated_config = config_validated.dict()
-
+    # import pdb; pdb.set_trace()
     schema = generate_schema(validated_config)
+    # import pdb; pdb.set_trace()
+    validate_schema(ddf.partitions[0].compute(),schema, pk=validated_config['pk_column'])
 
     ddf_result = ddf.map_partitions(validate_schema, schema, pk=validated_config['pk_column'])
     ddf_critical_error = ddf_result[ddf_result['pk'].isnull()].drop_duplicates()
@@ -104,6 +114,7 @@ def validate_data(ddf, config):
     ddf_rule_error = ddf_result[~ddf_result['pk'].isnull()]
     ddf_rule_error = ddf_rule_error.drop(columns=['schema_context'])
     # ddf_rule_error['file_id'] = file_id
+    
     
     # ddf_rule_error['start_time'] = start_time
     ddf_critical_error = ddf_critical_error[['schema_context', 'column', 'input', 'rule_name']]

@@ -45,15 +45,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
              project_folder_name: str = None,
              file_id: int = None,
              config: Dict = None,      
-             viz_widgets = None,
-             filepath = 'ddd',
+             param: Dict = {},
         ):
         self._token = credentials['token']
         self._file_id = file_id
         self._folder_id = folder_id
         self._project_folder_name = project_folder_name
         self._file_name = file_name
-        self._config = config           
+        self._config = config
+        self._param = param           
         
         self.meta = {
             "file_id": file_id,
@@ -315,3 +315,29 @@ class DsmAPIDataSet(APIDataSet):
         
         self._request_args['auth'] = None
 
+
+class DsmReadExcelNode(DsmDataNode):    
+    
+    # def _read_excel(inputs, **kwargs):
+    #     return dd.from_map(pd.read_excel, inputs, **kwargs)
+
+    def _load(self) -> Tuple[pd.DataFrame, int]:  
+        data_node = self._get_data_node()
+        folder_id = self._get_folder_id(data_node)
+        file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
+        meta, file_obj = data_node.get_file(file_id=file_id)     
+        df = pd.read_excel(file_obj, **self._param)
+        ddf = dd.from_pandas(df, npartitions=1)
+        
+        self.meta['file_id'] = file_id
+        self.meta['folder_id'] = folder_id
+        
+        return (ddf, self.meta)
+        # return (ddf, file_id)
+    
+    def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
+        raise ValueError('Not support save Excel yet')
+
+# test = DsmReadExcelNode(credentials={'token':"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjcwMDM4OTEyLCJpYXQiOjE2Njk5NTI1MTIsImp0aSI6ImJjOWYyZWY0MDI1YzQwOGNhMjE4NDRlNWJkZjc1MTNhIiwidXNlcl9pZCI6MTV9.7mNzO6VQsozu4DjmS1x7ZpayNdNB7U1eH3dpiw_o6QM"
+# }, file_name='TM_Dataset.xlsx', project_folder_name="Landing")
+# print(test.load())
