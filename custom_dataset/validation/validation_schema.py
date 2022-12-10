@@ -15,7 +15,7 @@ from src.config.validation_rules import rules
 from line_profiler import LineProfiler
 import time
 
-profile = LineProfiler()
+# profile = LineProfiler()
 
 ## pydantic schema
 class Column(BaseModel):    

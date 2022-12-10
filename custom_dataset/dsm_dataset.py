@@ -26,6 +26,16 @@ from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI,
 from line_profiler import LineProfiler
 import time
 
+import logging
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    level=logging.WARNING,  # set 3rd party logs to warning (for hiding it)
+)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 # profile = LineProfiler()
 
 
@@ -179,19 +189,17 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         #     print(e)
             # write_dummy_file(self._file_name, self._folder_id, data_node)
 
-        print('      Write Validation:     ')
+        logger.info('      Write Validation:     ')
         ddf = self._validate_data(ddf, type='write')
 
         # else:
             
         #     n_original_row = dask.compute(ddf.shape[0])[0]
-
-        print('      Write File:     ')
+        logger.info('      Write File:     ')
         with ProgressBar():
             data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
-
-        print('      Read Validation:     ')
+        logger.info('      Read Validation:     ')
         # read validation logs
         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         ddf_read = data_node.read_ddf(file_id=file_id)
