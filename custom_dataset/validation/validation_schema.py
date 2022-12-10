@@ -12,6 +12,11 @@ from typing import Literal, List, Dict
 # from .validation_rules import rules
 from src.config.validation_rules import rules
 
+from line_profiler import LineProfiler
+import time
+
+profile = LineProfiler()
+
 ## pydantic schema
 class Column(BaseModel):    
     data_type: Literal['int', 'str', 'string', 'float','float64', 'int32', 'Int32','Int64', 'Float32', 'datetime','datetime64[ns]','datetime64[ms]','datetime64[s]', 'bool','long']
@@ -98,13 +103,14 @@ def generate_schema(config):
 
     return schema
 
+# @profile 
 def validate_data(ddf, config):
     config_validated = Configs(**config)
     validated_config = config_validated.dict()
     # import pdb; pdb.set_trace()
     schema = generate_schema(validated_config)
     # import pdb; pdb.set_trace()
-    validate_schema(ddf.partitions[0].compute(),schema, pk=validated_config['pk_column'])
+    # validate_schema(ddf.partitions[0].compute(),schema, pk=validated_config['pk_column'])
 
     ddf_result = ddf.map_partitions(validate_schema, schema, pk=validated_config['pk_column'])
     ddf_critical_error = ddf_result[ddf_result['pk'].isnull()].drop_duplicates()
@@ -125,4 +131,7 @@ def validate_data(ddf, config):
     df_is_required = pd.DataFrame(is_required_list)
     ddf_is_required = dd.from_pandas(df_is_required, chunksize=100000)  
     ddf_rule_error = ddf_rule_error.merge(ddf_is_required, on='column', how='left')
+    ddf_rule_error['is_required'] = ddf_rule_error['is_required'].fillna(False)
+    
+    # profile.print_stats()
     return ddf_critical_error, ddf_rule_error

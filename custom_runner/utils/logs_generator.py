@@ -152,16 +152,17 @@ def gen_log_finish(pipeline_name):
     datanode_detail = {}
     
     for dataset_name in dataset_name_list:
-        data = catalog.load(dataset_name)
+        try:
+            dataset_meta = catalog.exists(dataset_name)
         
-        if type(data) == tuple:
-            _, dataset_meta = data
+        # if type(dataset_meta) == dict:
             datanode_detail[dataset_name] = {
                 'id': dataset_name,
                 'file_id': dataset_meta['file_id'],
                 'meta': dataset_meta,
             }
-        else:
+        except Exception as e:
+            print('Exception :', e)
             datanode_detail[dataset_name] = {
                 'id': dataset_name,
                 'file_id': None,

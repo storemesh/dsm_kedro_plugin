@@ -23,6 +23,12 @@ from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import val
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID
 # from src.generate_datanode.utils.utils import write_dummy_file
 
+from line_profiler import LineProfiler
+import time
+
+# profile = LineProfiler()
+
+
 def write_dummy_file(file_name, directory_id, data_node):
     df = pd.DataFrame([], columns=['_hash'])
     ddf_mock = dd.from_pandas(df, chunksize=100)
@@ -85,6 +91,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         )
         return data_node
 
+    # @profile 
     def _validate_data(self, ddf, type):
         folder_path = 'logs/validation_logs/'
         save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}.csv')
@@ -172,19 +179,23 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         #     print(e)
             # write_dummy_file(self._file_name, self._folder_id, data_node)
 
+        print('      Write Validation:     ')
         ddf = self._validate_data(ddf, type='write')
 
         # else:
             
         #     n_original_row = dask.compute(ddf.shape[0])[0]
 
+        print('      Write File:     ')
         with ProgressBar():
             data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
+
+        print('      Read Validation:     ')
         # read validation logs
         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-        data_node.read_ddf(file_id=file_id)
-        ddf = self._validate_data(ddf, type='read')
+        ddf_read = data_node.read_ddf(file_id=file_id)
+        ddf_read = self._validate_data(ddf_read, type='read')
 
         # end_time = datetime.datetime.now()
         # logs = {
@@ -202,6 +213,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
     def _describe(self) -> Dict[str, Any]:
         pass
+    
+    def exists(self) -> Dict[str, Any]:
+        data_node = self._get_data_node()
+        folder_id = self._get_folder_id(data_node)
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
+        self.meta['file_id'] = file_id
+        self.meta['folder_id'] = folder_id
+        
+        return self.meta
     
 
     
