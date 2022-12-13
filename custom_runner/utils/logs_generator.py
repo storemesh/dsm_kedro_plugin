@@ -27,6 +27,7 @@ validation_log_dir = 'logs/validation_logs/'
 
 base_url = "https://api.discovery.dev.data.storemesh.com/api"
 run_pipeline_url = f"{base_url}/logs/run-pipeline/"
+file_meta_url = f"{base_url}/v2/file"
 
 def gen_log_start(pipeline_name):
     '''
@@ -60,7 +61,7 @@ def gen_log_start(pipeline_name):
     git_detail = get_git_detail(pipeline_name)
 
     # prepare data
-    start_run_all = datetime.now()
+    start_run_all = datetime.utcnow()
     result_status = "RUNNING"
 
     output_dict = {
@@ -73,6 +74,7 @@ def gen_log_start(pipeline_name):
 
     run_all_result = {
         'uuid': str(uuid.uuid4()),
+        'project_id': project_id,
         'pipeline': pipeline_id,
         'start_time': start_run_all,
         'end_time': start_run_all,
@@ -148,7 +150,8 @@ def gen_log_finish(pipeline_name):
     df_val_types = pd.DataFrame(val_types)
 
     ## data nodes detail        
-    dataset_name_list = list(pipeline.data_sets())        
+    dataset_name_list = list(pipeline.data_sets())      
+    dataset_output_list = list(pipeline.all_outputs())  
     datanode_detail = {}
     
     for dataset_name in dataset_name_list:
@@ -161,6 +164,21 @@ def gen_log_finish(pipeline_name):
                 'file_id': dataset_meta['file_id'],
                 'meta': dataset_meta,
             }
+            
+            # change context in meta data
+            if dataset_name in dataset_output_list:
+                res = requests.get(f"{file_meta_url}/{dataset_meta['file_id']}", headers=headers)
+                context = res.json()['context']
+                context.update({
+                    "pipeline_log": { 
+                        "run_pipeline_id": start_data['uuid'],
+                        "run_pipeline_link": f"https://logs.discovery.dev.data.storemesh.com/project/{start_data['project_id']}/pipeline/run-pipeline/{start_data['uuid']}",
+                    },
+                })
+                json_data = { "context": context }
+                res = requests.patch(f"{file_meta_url}/{dataset_meta['file_id']}/", json=json_data, headers=headers)
+                print(res)
+                
         except Exception as e:
             print('Exception :', e)
             datanode_detail[dataset_name] = {
@@ -248,7 +266,7 @@ def gen_log_finish(pipeline_name):
     }
     
     print('------------')
-    end_run_all = datetime.now()
+    end_run_all = datetime.utcnow()
     
     result_status = run_function_result['status']
     result_data = {
@@ -430,7 +448,7 @@ def _read_monad_logs(
 
             res = datanode.writeListDataNode(df=ddf_log, directory_id=log_folder_id, name=log_filename, replace=True)
             listdatanode_file_id = res['file_id']
-            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]
+            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]['file_id']
             # write log file
             # datanode.upload_file(
             #     directory_id=log_folder_id, 

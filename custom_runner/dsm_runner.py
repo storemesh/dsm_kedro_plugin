@@ -89,7 +89,7 @@ class WriteFullLogRunner(AbstractRunner):
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
         error_exception = None
         for exec_index, node in enumerate(nodes):
-            start_time = datetime.now()
+            start_time = datetime.utcnow()
             
             is_success = True
             error_log = "-----"
@@ -104,7 +104,7 @@ class WriteFullLogRunner(AbstractRunner):
                 error_exception = e
                 
             ##### function log
-            end_time = datetime.now()
+            end_time = datetime.utcnow()
             delta = end_time - start_time
             print('Difference is:', delta)
 
@@ -122,7 +122,7 @@ class WriteFullLogRunner(AbstractRunner):
                 replace=True
             )
             listdatanode_file_id = res['file_id']
-            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]
+            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]['file_id']
             
             func_log_list[node.name] = {
                 "func_id": node.name,
