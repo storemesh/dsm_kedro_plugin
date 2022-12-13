@@ -190,7 +190,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             # write_dummy_file(self._file_name, self._folder_id, data_node)
 
         logger.info('      Write Validation:     ')
-        # ddf = self._validate_data(ddf, type='write')
+        ddf = self._validate_data(ddf, type='write')
 
         # else:
             
@@ -201,9 +201,9 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
         logger.info('      Read Validation:     ')
         # read validation logs
-        # file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-        # ddf_read = data_node.read_ddf(file_id=file_id)
-        # ddf_read = self._validate_data(ddf_read, type='read')
+        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        ddf_read = data_node.read_ddf(file_id=file_id)
+        ddf_read = self._validate_data(ddf_read, type='read')
 
         # end_time = datetime.datetime.now()
         # logs = {
