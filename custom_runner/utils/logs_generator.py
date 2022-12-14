@@ -446,7 +446,7 @@ def _read_monad_logs(
 
             # file_id = datanode.get_file_id(name=f"{log_filename}.listDataNode", directory_id=log_folder_id)
 
-            res = datanode.writeListDataNode(df=ddf_log, directory_id=log_folder_id, name=log_filename, replace=True)
+            res = datanode.writeListDataNode(df=ddf_merge, directory_id=log_folder_id, name=log_filename, replace=True)
             listdatanode_file_id = res['file_id']
             log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]['file_id']
             # write log file

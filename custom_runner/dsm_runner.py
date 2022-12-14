@@ -99,7 +99,7 @@ class WriteFullLogRunner(AbstractRunner):
             logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
             rootLogger = logging.getLogger('kedro')
 
-            fileHandler = logging.FileHandler(log_path)
+            fileHandler = logging.FileHandler(log_path, mode='w')
             fileHandler.setFormatter(logFormatter)
             rootLogger.addHandler(fileHandler)
 
