@@ -27,16 +27,13 @@ from line_profiler import LineProfiler
 import time
 
 import logging
+
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.WARNING,  # set 3rd party logs to warning (for hiding it)
 )
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-
-# profile = LineProfiler()
+logger = logging.getLogger('kedro')
+logger.setLevel(logging.DEBUG)
 
 
 def write_dummy_file(file_name, directory_id, data_node):
@@ -166,6 +163,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         #         print("    Exception:", e)
         #         return None        
         folder_id = self._get_folder_id(data_node)
+        
 
         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
         
@@ -200,7 +198,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
         logger.info('      Read Validation:     ')
-        # read validation logs
+        ## read validation logs
         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
         ddf_read = data_node.read_ddf(file_id=file_id)
         ddf_read = self._validate_data(ddf_read, type='read')
@@ -350,6 +348,8 @@ class DsmReadExcelNode(DsmDataNode):
     #     return dd.from_map(pd.read_excel, inputs, **kwargs)
 
     def _load(self) -> Tuple[pd.DataFrame, int]:  
+        
+        # logger.info(f'in dsm dataset.......')
         data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node)
         file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 

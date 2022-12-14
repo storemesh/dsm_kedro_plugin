@@ -29,6 +29,7 @@ import pandas as pd
 import time
 import os
 import dask.dataframe as dd
+import logging
 
 # from src.etl_pipeline.pipeline_registry import register_pipelines
 # from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
@@ -88,7 +89,29 @@ class WriteFullLogRunner(AbstractRunner):
         done_nodes = set()
         load_counts = Counter(chain.from_iterable(n.inputs for n in nodes))
         error_exception = None
+        
         for exec_index, node in enumerate(nodes):
+            
+            # Get Logs
+            log_filename = f'function_{node.name}.txt'
+            log_path = os.path.join(validation_log_dir, log_filename)               
+                
+            logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+            rootLogger = logging.getLogger('kedro')
+
+            fileHandler = logging.FileHandler(log_path)
+            fileHandler.setFormatter(logFormatter)
+            rootLogger.addHandler(fileHandler)
+
+            consoleHandler = logging.StreamHandler()
+            consoleHandler.setFormatter(logFormatter)
+            rootLogger.addHandler(consoleHandler)
+                
+            rootLogger.setLevel(logging.DEBUG)
+
+            rootLogger.info(f'testtt in runner')
+            
+            
             start_time = datetime.utcnow()
             
             is_success = True
@@ -101,6 +124,7 @@ class WriteFullLogRunner(AbstractRunner):
                 is_run_all_success = False
                 self._suggest_resume_scenario(pipeline, done_nodes, catalog)
                 error_log = traceback.format_exc()
+                rootLogger.info(f'error_log: {error_log}')
                 error_exception = e
                 
             ##### function log
@@ -109,10 +133,10 @@ class WriteFullLogRunner(AbstractRunner):
             print('Difference is:', delta)
 
 
-            log_filename = f'function_{node.name}.txt'
-            log_path = os.path.join(validation_log_dir, log_filename)
-            with open(log_path, 'w') as f:
-                f.write(error_log)
+            # log_filename = f'function_{node.name}.txt'
+            # log_path = os.path.join(validation_log_dir, log_filename)
+            # with open(log_path, 'w') as f:
+            #     f.write(error_log)
 
             # write log file
             res = datanode.writeListFile(
