@@ -12,7 +12,7 @@ from typing import Literal, List, Dict
 # from .validation_rules import rules
 from src.config.validation_rules import rules
 
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 import time
 
 # profile = LineProfiler()

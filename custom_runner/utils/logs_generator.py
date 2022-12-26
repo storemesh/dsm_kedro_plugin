@@ -19,7 +19,7 @@ from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
 # from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
 
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
-from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
+from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, OBJECT_STORAGE_SECUE
 from src.config.validation_rules import rules
 
 start_pipeline_folder = 'logs/validation_logs/start'
@@ -346,6 +346,7 @@ def get_dsm_datanode():
         token,
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
+        object_storage_secue=OBJECT_STORAGE_SECUE,
     )
 
     return datanode, token

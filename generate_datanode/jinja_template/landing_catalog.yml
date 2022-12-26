@@ -7,7 +7,7 @@
 {{ node.landing_catalog_name }}:
   type: dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmListDataNode
   folder_id: {{ node.folder_id }}
-  file_name: {{ node.landing_catalog_name }}
+  file_name: {{ node.landing_file_name }}
   credentials: dsmlibrary
 
 {% endfor %}

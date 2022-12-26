@@ -14,7 +14,7 @@ import importlib.machinery
 from .utils import camel_case, find_pk_column, get_numpy_schema, md5hash, get_env_var, create_file_if_not_exist
 from generate_setting import KEDRO_PROJECT_BASE, JINJA_PATH, SQL_DATANODE_CATALOG_PATH, LANDING_CATALOG_PATH, INTEGRATION_CATALOG_PATH
 
-from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
+from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, OBJECT_STORAGE_SECUE
 
 def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_name, token, write_mode=False):
     if write_mode:
@@ -25,21 +25,18 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
         token=token,
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
+        object_storage_secue= OBJECT_STORAGE_SECUE,
     )
     data_node = DataNode(
         token, 
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
+        object_storage_secue= OBJECT_STORAGE_SECUE,
     )
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
     
+    node_list = []
     for database_id, table_list in source_table.items():
-        # exec to define class object         
-        # table_id = get_database_schema(database_id)
-        # meta, schema = database.get_table_schema(table_id=table_id) # get_database_schema(database_id)
-        # exec(schema, globals())
-        # database_name = find_system_detail(database_id)
-        # database_name = database_name.replace(' ', '_')
         print(f'--- dabase id: {database_id} ----- ')
         # exec to define class object                 
         database_meta, schema = database.get_database_schema(database_id=database_id)
@@ -49,7 +46,9 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
         database_name = database_name.replace(' ', '_')
 
         for table_name in table_list:            
-            catalog_name = f'SQLDataNode___{database_name}___{table_name}'
+            # catalog_name = f'SQLDataNode___{database_name}___{table_name}'
+            catalog_name = f'sql___{database_name}_{table_name}'
+            file_name = f'{database_name}_{table_name}'
             camel_case_table_name = camel_case(table_name)   
 
             # get query function
@@ -60,27 +59,30 @@ def query():
             
             table_class_obj = eval(camel_case_table_name)
             meta, pk_column = get_numpy_schema(table_class_obj)   
-
+            
             database.write_sql_query(
                 query_function=query_template,
                 directory_id=sql_datanode_folder_id, 
                 database_id=database_id, 
                 pk_column=pk_column, 
-                name=catalog_name, 
+                name=file_name, 
                 meta=meta,
                 replace=True
             )
 
             data = {
                 'catalog_name': catalog_name,
-                'file_name': table_name,
+                'file_name': file_name,
                 'folder_id': sql_datanode_folder_id,
             }
-            if write_mode:
-                env_node = Environment(loader=FileSystemLoader(JINJA_PATH))  
-                template = env_node.get_template(f'sql_datanode.yml')           
-                with open(SQL_DATANODE_CATALOG_PATH, 'a') as f:
-                    f.write(template.render(data))
+
+            node_list.append(data)
+        
+    if write_mode:
+        env_node = Environment(loader=FileSystemLoader(JINJA_PATH))  
+        template = env_node.get_template(f'sql_datanode.yml')           
+        with open(SQL_DATANODE_CATALOG_PATH, 'a') as f:
+            f.write(template.render({ "node_list": node_list}))
 
 # Landing
 def generate_landing_pipeline(
@@ -127,11 +129,13 @@ def generate_landing_pipeline(
         token=token,
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
+        object_storage_secue=OBJECT_STORAGE_SECUE,
     )
     data_node = DataNode(
         token, 
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
+        object_storage_secue=OBJECT_STORAGE_SECUE,
     )
 
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
@@ -146,49 +150,21 @@ def generate_landing_pipeline(
             if generate_source_dict != None:
                 if (not database_id in generate_source_dict) or (not table_name in generate_source_dict[database_id]):
                     check_generate_file = False
-
-            sql_query_catalog_name = f'SQLDataNode___{database_name}___{table_name}'
-            landing_catalog_name = f'landing___{database_name}___{table_name}'
-            # landing_latest_catalog_name = f'landing___{database_name}___{table_name}___latest'
-            # landing_temp_catalog_name = f'landing___{database_name}___{table_name}___temp'
-            # landing_change_catalog_name = f'landing___{database_name}___{table_name}___change'
+                    
+            sql_query_catalog_name = f'sql___{database_name}_{table_name}'
+            landing_file_name = f'{database_name}_{table_name}'
+            landing_catalog_name = f'lan___{landing_file_name}'
             print(landing_catalog_name)
 
             # allocate file id (if not exist)
-            # if check_generate_file:
-#             landing_file_id = create_file_if_not_exist(
-#                 file_name=table_name, 
-#                 directory_id=landing_folder_id[database_id],
-#                 data_node=data_node,
-#                 overwrite_exist_node=overwrite_exist_node,
-
-#             )
-            # landing_temp_file_id = create_file_if_not_exist(
-            #     file_name=table_name, 
-            #     directory_id=landing_folder_id[database_id]['temp'],
-            #     data_node=data_node,
-            #     overwrite_exist_node=overwrite_exist_node,
-            # )
-            # landing_change_file_id = create_file_if_not_exist(
-            #     file_name=table_name, 
-            #     directory_id=landing_folder_id[database_id]['change'],
-            #     data_node=data_node,
-            #     overwrite_exist_node=overwrite_exist_node,
-            # )
            
             data = {
                 'file_name': table_name,
                 'sql_query_catalog_name': sql_query_catalog_name,
                 'landing_catalog_name': landing_catalog_name,
-                # 'landing_latest_catalog_name': landing_latest_catalog_name,
-                # 'landing_temp_catalog_name': landing_temp_catalog_name,
-                # 'landing_change_catalog_name': landing_change_catalog_name,
+                'landing_file_name': landing_file_name,
                 'folder_id': landing_folder_id,
-                'database_name': database_name,
-                # 'landing_file_id': landing_file_id,
-                # 'landing_latest_file_id': landing_latest_file_id,
-                # 'landing_temp_file_id': landing_temp_file_id,
-                # 'landing_change_file_id': landing_change_file_id,                
+                'database_name': database_name,               
             }
             node_list.append(data)
 
@@ -200,10 +176,6 @@ def generate_landing_pipeline(
         template = env_node.get_template(f'landing_pipeline.py')     
         with open(landing_pipeline_path, 'w') as f:
             f.write(template.render({ "node_list": node_list}))
-
-        # template = env_node.get_template(f'landing_pipeline_move.py')     
-        # with open(update_latest_landing_pipeline_path, 'w') as f:
-        #     f.write(template.render({ "node_list": node_list}))
 
 
 # integration
@@ -222,21 +194,16 @@ def generate_integration_catalogs(
         token, 
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
+        object_storage_secue=OBJECT_STORAGE_SECUE,
     )
     integration_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=integration_folder_name)
     
     for table_name, config in integration_table.items():  
         catalog_name = f'integration___{table_name}'
-        # integraton_file_id = create_file_if_not_exist(
-        #     file_name=catalog_name, 
-        #     directory_id=integration_folder_id,
-        #     data_node=data_node
-        # )
         data = {
             'catalog_name': catalog_name,
             'file_name': table_name,            
             'folder_id': integration_folder_id,
-            # 'file_id': integraton_file_id,
             'config': config,
         }
         node_list.append(data)

@@ -14,7 +14,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 func=pass_data,
                 inputs=["{{ node.sql_query_catalog_name }}"],
                 outputs="{{ node.landing_catalog_name }}",
-                name="{{ node.landing_catalog_name }}___node",
+                name="{{ node.landing_catalog_name }}_node",
             ),
             {% endfor %}
         ]

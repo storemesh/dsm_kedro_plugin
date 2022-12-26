@@ -20,10 +20,10 @@ import time
 
 
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
-from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID
+from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE
 # from src.generate_datanode.utils.utils import write_dummy_file
 
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 import time
 
 import logging
@@ -95,6 +95,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             self._token, 
             dataplatform_api_uri=DATAPLATFORM_API_URI,
             object_storage_uri=OBJECT_STORAGE_URI,
+            object_storage_secue=OBJECT_STORAGE_SECUE,
         )
         return data_node
 
