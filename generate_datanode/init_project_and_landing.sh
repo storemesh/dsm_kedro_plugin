@@ -1,0 +1,4 @@
+python src/dsm_kedro_plugin/create_project_template.py
+python src/dsm_kedro_plugin/generate_datanode/01_generate_sql_datanode.py
+python src/dsm_kedro_plugin/generate_datanode/02_generate_landing.py
+kedro run --pipeline=query_landing
