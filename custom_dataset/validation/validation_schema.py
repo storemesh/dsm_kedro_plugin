@@ -9,13 +9,8 @@ import dask.dataframe as dd
 import datetime 
 from typing import Literal, List, Dict
 
-# from .validation_rules import rules
 from src.config.validation_rules import rules
-
-# from line_profiler import LineProfiler
 import time
-
-# profile = LineProfiler()
 
 ## pydantic schema
 class Column(BaseModel):    
@@ -99,7 +94,6 @@ def generate_schema(config):
         strict=config['is_strict'], 
         checks=dataframe_validation_rules,
     )
-    # index=pa.Index(str)
 
     return schema
 
@@ -107,22 +101,15 @@ def generate_schema(config):
 def validate_data(ddf, config):
     config_validated = Configs(**config)
     validated_config = config_validated.dict()
-    # import pdb; pdb.set_trace()
     schema = generate_schema(validated_config)
-    # import pdb; pdb.set_trace()
-    # validate_schema(ddf.partitions[0].compute(),schema, pk=validated_config['pk_column'])
 
     ddf_result = ddf.map_partitions(validate_schema, schema, pk=validated_config['pk_column'])
     ddf_critical_error = ddf_result[ddf_result['pk'].isnull()].drop_duplicates()
     ddf_critical_error = ddf_critical_error.drop(columns=['pk'])
-    # ddf_critical_error['file_id'] = file_id
 
     ddf_rule_error = ddf_result[~ddf_result['pk'].isnull()]
     ddf_rule_error = ddf_rule_error.drop(columns=['schema_context'])
-    # ddf_rule_error['file_id'] = file_id
-    
-    
-    # ddf_rule_error['start_time'] = start_time
+        
     ddf_critical_error = ddf_critical_error[['schema_context', 'column', 'input', 'rule_name']]
     ddf_rule_error = ddf_rule_error[['pk', 'column', 'input', 'rule_name']]
 
@@ -133,5 +120,4 @@ def validate_data(ddf, config):
     ddf_rule_error = ddf_rule_error.merge(ddf_is_required, on='column', how='left')
     ddf_rule_error['is_required'] = ddf_rule_error['is_required'].fillna(False)
     
-    # profile.print_stats()
     return ddf_critical_error, ddf_rule_error

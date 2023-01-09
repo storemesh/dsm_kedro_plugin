@@ -2,7 +2,6 @@ from pathlib import Path
 import pathlib
 import os
 
-# KEDRO_PROJECT_BASE = Path.cwd().parent.parent.parent # go to root of kedro project
 KEDRO_PROJECT_BASE = pathlib.Path(__file__).parent.resolve().parent.parent.parent
 PIPELINE_PROJECT_PATH = os.path.join(KEDRO_PROJECT_BASE, 'src/etl_pipeline')
 

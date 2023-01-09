@@ -16,7 +16,6 @@ from kedro.framework.startup import bootstrap_project
 
 from src.etl_pipeline.pipeline_registry import register_pipelines
 from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
-# from src.dsm_kedro_plugin.custom_dataset.validation.validation_rules import rules
 
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
 from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, OBJECT_STORAGE_SECUE
@@ -156,9 +155,7 @@ def gen_log_finish(pipeline_name):
     
     for dataset_name in dataset_name_list:
         try:
-            dataset_meta = catalog.exists(dataset_name)
-        
-        # if type(dataset_meta) == dict:
+            dataset_meta = catalog.exists(dataset_name)        
             datanode_detail[dataset_name] = {
                 'id': dataset_name,
                 'file_id': dataset_meta['file_id'],
@@ -270,20 +267,15 @@ def gen_log_finish(pipeline_name):
     
     result_status = run_function_result['status']
     result_data = {
-        # 'uuid': start_data['uuid'],
         'status': result_status,
         'end_time': end_run_all,
         'result': output_dict,
     }
-    # start_data['status'] = result_status
-    # start_data['end_time'] = end_run_all
-    # start_data['result'] = output_dict
     
     json_str = json.dumps(result_data, indent=4, default=str)
     json_data = json.loads(json_str)
     print(json_str)
 
-    # import pdb; pdb.set_trace()
     patch_url = f"{run_pipeline_url}{start_data['uuid']}/"
     res = requests.patch(patch_url, json=json_data, headers=headers)
     
@@ -329,8 +321,6 @@ def get_pipeline_name(pipeline):
 
     for key, value in pipeline_detail.items():
         item_outputs = value.all_outputs()
-        # if output_dataset_name == value.all_outputs():
-        # import pdb;pdb.set_trace()
         if output_dataset_name.intersection(item_outputs) == output_dataset_name:
             pipeline_name = key
             break
@@ -444,25 +434,9 @@ def _read_monad_logs(
             with open(all_record_path) as data_file:
                 all_record = json.load(data_file)['all_record']
             
-
-            # file_id = datanode.get_file_id(name=f"{log_filename}.listDataNode", directory_id=log_folder_id)
-
             res = datanode.writeListDataNode(df=ddf_merge, directory_id=log_folder_id, name=log_filename, replace=True)
             listdatanode_file_id = res['file_id']
-            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]['file_id']
-            # write log file
-            # datanode.upload_file(
-            #     directory_id=log_folder_id, 
-            #     file_path=log_path, 
-            #     description=f"log file of '{file_name}' ({file_id})", 
-            #     lineage=[file_id],
-            #     replace=True,
-            # )
-            # time.sleep(1)
-            # log_file_id = datanode.get_file_id(name=log_filename, directory_id=log_folder_id)
-            # datanode.write(df=ddf_merge, directory=log_folder_id, name=f'{folder_id}_{file_name}_{type}', replace=True, lineage=)
-                
-            
+            log_file_id = datanode.get_file_version(file_id=listdatanode_file_id)[0]['file_id']            
 
             # monad output
             return {

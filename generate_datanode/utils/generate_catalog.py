@@ -38,6 +38,7 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
     node_list = []
     for database_id, table_list in source_table.items():
         print(f'--- dabase id: {database_id} ----- ')
+        
         # exec to define class object                 
         database_meta, schema = database.get_database_schema(database_id=database_id)
         exec(schema, globals())
@@ -45,9 +46,8 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
         database_name = database_meta['name']
         database_name = database_name.replace(' ', '_')
 
-        for table_name in table_list:            
-            # catalog_name = f'SQLDataNode___{database_name}___{table_name}'
-            catalog_name = f'sql___{database_name}_{table_name}'
+        for table_name in table_list:
+            catalog_name = f's.{database_name}_{table_name}'
             file_name = f'{database_name}_{table_name}'
             camel_case_table_name = camel_case(table_name)   
 
@@ -114,16 +114,6 @@ def generate_landing_pipeline(
         with open(landing_pipeline_path, 'w') as f:
             f.write('')
 
-#         # update_latest_landing
-#         update_latest_landing_node_path = os.path.join(project_path, 'pipelines/update_latest_landing/nodes.py')
-#         template = env_node.get_template(f'landing_nodes.py')     
-#         with open(update_latest_landing_node_path, 'w') as f:
-#             f.write(template.render({}))
-
-#         update_latest_landing_pipeline_path = os.path.join(project_path, 'pipelines/update_latest_landing/pipeline.py')
-#         with open(update_latest_landing_pipeline_path, 'w') as f:
-#             f.write('')
-
     node_list = []
     database = DatabaseManagement(
         token=token,
@@ -156,8 +146,6 @@ def generate_landing_pipeline(
             landing_catalog_name = f'lan___{landing_file_name}'
             print(landing_catalog_name)
 
-            # allocate file id (if not exist)
-           
             data = {
                 'file_name': table_name,
                 'sql_query_catalog_name': sql_query_catalog_name,

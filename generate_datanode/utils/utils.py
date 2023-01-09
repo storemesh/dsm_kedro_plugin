@@ -15,7 +15,6 @@ import os
 sys.path.append(os.getcwd())
 
 from src.dsm_kedro_plugin.generate_datanode.generate_setting import KEDRO_PROJECT_BASE
-# from src.config.config_database import db_connection, db_schema
 
 map_dict = {
     Float: 'float',
@@ -63,20 +62,11 @@ def get_numpy_schema(class_obj):
         
     return schema, pk_column
 
-
-
-# def find_system_detail(database_id):
-#     return db_connection[database_id]
-
-# def get_database_schema(database_id):
-#     return db_schema[database_id]
-
 def find_pk_column(class_obj):
     pk_column = None
     for property, value in vars(class_obj).items():        
         if not property.startswith('_'):
             try:
-                # import pdb; pdb.set_trace()
                 if value.primary_key:
                     return property
             except Exception as e:
@@ -86,11 +76,6 @@ def find_pk_column(class_obj):
 def find_schema(database_id):
     pk_column = None
     return pk_column
-
-
-# def camel_case(s):
-#   s = sub(r"(_|-)+", " ", s).title().replace(" ", "")
-#   return ''.join([s[0].upper(), s[1:]])
 
 def camel_case(ident):
     return ''.join(x[:1].upper() + x[1:] for x in ident.split('_'))

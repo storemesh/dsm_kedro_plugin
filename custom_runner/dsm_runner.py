@@ -31,11 +31,8 @@ import os
 import dask.dataframe as dd
 import logging
 
-# from src.etl_pipeline.pipeline_registry import register_pipelines
-# from src.dsm_kedro_plugin.generate_datanode.utils.utils import get_token
-# from src.dsm_kedro_plugin.generate_datanode.generate_setting import PIPELINE_PROJECT_PATH, KEDRO_PROJECT_BASE 
-from src.config.project_setting import PROJECT_FOLDER_ID, PROJECT_NAME, DATAPLATFORM_API_URI, OBJECT_STORAGE_URI
-from .utils.logs_generator import parse_commit_log, gen_log_start, gen_log_finish, get_pipeline_name, get_dsm_datanode, validation_log_dir
+from src.config.project_setting import PROJECT_FOLDER_ID
+from .utils.logs_generator import gen_log_start, gen_log_finish, get_pipeline_name, get_dsm_datanode, validation_log_dir
 
 class WriteFullLogRunner(AbstractRunner):
     """``SequentialRunner`` is an ``AbstractRunner`` implementation. It can
@@ -105,10 +102,8 @@ class WriteFullLogRunner(AbstractRunner):
 
             consoleHandler = logging.StreamHandler()
             consoleHandler.setFormatter(logFormatter)
-            rootLogger.addHandler(consoleHandler)
-                
+            rootLogger.addHandler(consoleHandler)                
             rootLogger.setLevel(logging.DEBUG)
-
             rootLogger.info(f'testtt in runner')
             
             
@@ -131,12 +126,6 @@ class WriteFullLogRunner(AbstractRunner):
             end_time = datetime.utcnow()
             delta = end_time - start_time
             print('Difference is:', delta)
-
-
-            # log_filename = f'function_{node.name}.txt'
-            # log_path = os.path.join(validation_log_dir, log_filename)
-            # with open(log_path, 'w') as f:
-            #     f.write(error_log)
 
             # write log file
             res = datanode.writeListFile(
