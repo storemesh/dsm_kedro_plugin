@@ -8,6 +8,8 @@ import hashlib
 import yaml
 import os
 import time
+from re import sub
+import inflection
 from dask.diagnostics import ProgressBar
 
 import sys
@@ -62,6 +64,25 @@ def get_numpy_schema(class_obj):
         
     return schema, pk_column
 
+
+def get_numpy_schema_table_alchemy(class_obj):
+    schema = {}
+    pk_column = None
+
+    list_columns = class_obj.columns.items()
+    pk_column = str(list_columns[0][0])
+    for column in list_columns:
+        column_obj = column[1]
+        column_name = column[0]
+        class_dtype = type(column_obj.type)
+        try:
+            schema[column_name] = map_dict[class_dtype]
+        except Exception as e:
+            print(f'Datatype Mapping Error! --> {column_name}: {e}')
+        
+    return schema, pk_column
+
+
 def find_pk_column(class_obj):
     pk_column = None
     for property, value in vars(class_obj).items():        
@@ -79,6 +100,10 @@ def find_schema(database_id):
 
 def camel_case(ident):
     return ''.join(x[:1].upper() + x[1:] for x in ident.split('_'))
+
+def snake_case(text):
+    result = inflection.underscore(text)
+    return result
 
 class MissingEnvironmentVariable(Exception):
     pass

@@ -11,7 +11,7 @@ import tempfile
 from importlib import util
 import importlib.machinery
 
-from .utils import camel_case, find_pk_column, get_numpy_schema, md5hash, get_env_var, create_file_if_not_exist
+from .utils import camel_case, snake_case, find_pk_column, get_numpy_schema, get_numpy_schema_table_alchemy, md5hash, get_env_var, create_file_if_not_exist
 from generate_setting import KEDRO_PROJECT_BASE, JINJA_PATH, SQL_DATANODE_CATALOG_PATH, LANDING_CATALOG_PATH, INTEGRATION_CATALOG_PATH
 
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, OBJECT_STORAGE_SECUE
@@ -47,18 +47,26 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
         database_name = database_name.replace(' ', '_')
 
         for table_name in table_list:
-            catalog_name = f's.{database_name}_{table_name}'
-            file_name = f'{database_name}_{table_name}'
-            camel_case_table_name = camel_case(table_name)   
+            snake_table_name = snake_case(table_name)
+            catalog_name = f'sql.{database_name}_{snake_table_name}'
+            file_name = f'{database_name}_{snake_table_name}'   
 
+            if table_name[:2] == 't_':
+                object_table_name = table_name
+            else:
+                object_table_name = camel_case(table_name) 
+            
             # get query function
             query_template = f'''
 def query():
-    return sql.select(['*']).select_from({camel_case_table_name})
+    return sql.select(['*']).select_from({object_table_name})
 '''  
             
-            table_class_obj = eval(camel_case_table_name)
-            meta, pk_column = get_numpy_schema(table_class_obj)   
+            table_class_obj = eval(object_table_name)            
+            if table_name[:2] == 't_':
+                meta, pk_column = get_numpy_schema_table_alchemy(table_class_obj)
+            else:
+                meta, pk_column = get_numpy_schema(table_class_obj)    
             
             database.write_sql_query(
                 query_function=query_template,
@@ -140,10 +148,11 @@ def generate_landing_pipeline(
             if generate_source_dict != None:
                 if (not database_id in generate_source_dict) or (not table_name in generate_source_dict[database_id]):
                     check_generate_file = False
-                    
-            sql_query_catalog_name = f'sql___{database_name}_{table_name}'
-            landing_file_name = f'{database_name}_{table_name}'
-            landing_catalog_name = f'lan___{landing_file_name}'
+            
+            snake_table_name = snake_case(table_name)
+            sql_query_catalog_name = f'sql.{database_name}_{snake_table_name}'
+            landing_file_name = f'{database_name}_{snake_table_name}'
+            landing_catalog_name = f'l.{landing_file_name}'
             print(landing_catalog_name)
 
             data = {
