@@ -1,7 +1,12 @@
 # dsm-kedro-plugin
 
+## Document
 
-## Set up sphinx docs 
+Open `docs/_build/html/index.html` in your browser
+
+## Generate Documents from Sphinx 
+
+### Set up sphinx docs 
 **Important**: before generate docs, dsm_kedro_plugin need to be in dsm_kedro template to prevent import error
 1. install sphinx and sphinx_rtd_theme
 ```sh
@@ -41,7 +46,9 @@ extensions = [
 ...
 
 html_theme = 'sphinx_rtd_theme' # change theme
+...
 
+autoclass_content = 'both' # to generate docs for __init__ in class
 ```
 
 5. add "modules" to `index.rst`  the result will be like this
@@ -76,10 +83,10 @@ make html
  Finish!!
 
 
-## Update your docs
+### Update your docs
 if your update your docstring in your source code, you can just rerun `make html` and the documents will be updated
 
-## Ref
+### Ref
 - tutorial https://www.youtube.com/watch?v=b4iFyrLQQh4   
 - you can install sphinx in pip instead of apt install, it's also work
 - you can copy config.py in here https://towardsdatascience.com/documenting-python-code-with-sphinx-554e1d6c4f6d 

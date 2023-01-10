@@ -4,7 +4,7 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
@@ -14,6 +14,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -30,9 +32,9 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -85,10 +87,15 @@
               
             
             
-              <p><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">custom_dataset</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">clickhouse_dataset module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">clickhouse_dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clickhouse_dataset.ClickHouseDataset"><code class="docutils literal notranslate"><span class="pre">ClickHouseDataset</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clickhouse_dataset.cast_datatype_for_clickhouse"><code class="docutils literal notranslate"><span class="pre">cast_datatype_for_clickhouse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clickhouse_dataset.get_info"><code class="docutils literal notranslate"><span class="pre">get_info()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="dsm_dataset.html">dsm_dataset module</a></li>
 </ul>
 </li>
@@ -162,22 +169,34 @@
            <div itemprop="articleBody">
             
   <section id="module-clickhouse_dataset">
-<span id="clickhouse-dataset-module"></span><h1>clickhouse_dataset module<a class="headerlink" href="#module-clickhouse_dataset" title="Permalink to this headline">¶</a></h1>
+<span id="clickhouse-dataset-module"></span><h1>clickhouse_dataset module<a class="headerlink" href="#module-clickhouse_dataset" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
-<dt id="clickhouse_dataset.ClickHouseDataset">
-<em class="property">class </em><code class="sig-prename descclassname">clickhouse_dataset.</code><code class="sig-name descname">ClickHouseDataset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">table_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">partitioned_column</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">if_exist</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'drop'</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/clickhouse_dataset.html#ClickHouseDataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clickhouse_dataset.ClickHouseDataset" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>]</p>
+<dt class="sig sig-object py" id="clickhouse_dataset.ClickHouseDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">clickhouse_dataset.</span></span><span class="sig-name descname"><span class="pre">ClickHouseDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">table_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">partitioned_column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">if_exist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'drop'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/clickhouse_dataset.html#ClickHouseDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clickhouse_dataset.ClickHouseDataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>]</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="clickhouse_dataset.cast_datatype_for_clickhouse">
-<code class="sig-prename descclassname">clickhouse_dataset.</code><code class="sig-name descname">cast_datatype_for_clickhouse</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ddf</span><span class="p">:</span> <span class="n">dask.dataframe.core.DataFrame</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/clickhouse_dataset.html#cast_datatype_for_clickhouse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clickhouse_dataset.cast_datatype_for_clickhouse" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="clickhouse_dataset.cast_datatype_for_clickhouse">
+<span class="sig-prename descclassname"><span class="pre">clickhouse_dataset.</span></span><span class="sig-name descname"><span class="pre">cast_datatype_for_clickhouse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ddf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/clickhouse_dataset.html#cast_datatype_for_clickhouse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clickhouse_dataset.cast_datatype_for_clickhouse" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt id="clickhouse_dataset.get_info">
-<code class="sig-prename descclassname">clickhouse_dataset.</code><code class="sig-name descname">get_info</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ddf</span><span class="p">:</span> <span class="n">dask.dataframe.core.DataFrame</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/clickhouse_dataset.html#get_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#clickhouse_dataset.get_info" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="clickhouse_dataset.get_info">
+<span class="sig-prename descclassname"><span class="pre">clickhouse_dataset.</span></span><span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ddf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/clickhouse_dataset.html#get_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#clickhouse_dataset.get_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise a <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> with parameter from data catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ddf</strong> (<em>pd.DataFrame</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – When parameters are incorrectly</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> object.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 

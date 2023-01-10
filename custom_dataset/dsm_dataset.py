@@ -32,44 +32,86 @@ logging.basicConfig(
 logger = logging.getLogger('kedro')
 logger.setLevel(logging.DEBUG)
 
-
-def write_dummy_file(file_name, directory_id, data_node):
-    df = pd.DataFrame([], columns=['_hash'])
-    ddf_mock = dd.from_pandas(df, chunksize=100)
-    data_node.write(
-        df=ddf_mock,
-        directory=directory_id,
-        name=file_name, 
-        replace=True
-    )
-    time.sleep(2)
-    file_id = data_node.get_file_id(name=f'{file_name}.parquet', directory_id=directory_id)
-    return file_id
-
 class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
+    """``DsmDataNode`` loads/saves data from/to Data Platform.
+
+    Example adding a catalog entry with
+    `YAML API
+    <https://kedro.readthedocs.io/en/stable/data/\
+        data_catalog.html#use-the-data-catalog-with-the-yaml-api>`_:
+
+    .. code-block:: yaml
+    
+        # for landing dataset
+        l.<your_desired_name>:
+            type: dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmDataNode
+            project_folder_name: Landing
+            file_name: <your_desired_name>
+            credentials: dsmlibrary
+
+        # for Staging dataset
+        s.<database_name>_<table_name>:
+            type: dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmDataNode
+            project_folder_name: Staging
+            file_name: <database_name>_<table_name>
+            credentials: dsmlibrary
+            schema: {
+                'columns': {
+                    'TR_NO': { 'data_type': 'int', 'nullable': False, 'is_required': False, 'validation_rule': [4]},
+                    'FILING_DATE': { 'data_type': 'datetime64[ns]', 'nullable': False, 'is_required': False},
+                    'REG_NO': { 'data_type': 'string', 'nullable': False, 'is_required': False, 'validation_rule': [4]},
+                },
+                'validation_rule': [5, 6, 7, 8, 9],
+                'pk_column': 'TR_NO',
+            }
+            
+        # for Integration dataset
+        i.<database_name>_<table_name>:
+            type: dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmDataNode
+            project_folder_name: Integration
+            file_name: <database_name>_<table_name>
+            credentials: dsmlibrary
+
+    """
     def __init__(
-             self, 
-             credentials: Dict[str, Any],        
-             file_name: str,
-             folder_id: int = None,
-             project_folder_name: str = None,
-             file_id: int = None,
-             config: Dict = None,      
-             param: Dict = {},
-        ):
+        self, 
+        credentials: Dict[str, Any],        
+        file_name: str,
+        folder_id: int = None,
+        project_folder_name: str = None,
+        schema: Dict = None,      
+        extra_param: Dict = {},
+    ):
+        """Initialize a ``DsmDataNode`` with parameter from data catalog.
+
+        Args:
+            credentials (Dict[str, Any]): Dictionary of credentials variable. It must be contain dsm token in key 'token'. You can define it in `local/credentials.yml` 
+            file_name (str): File Name to save/load in Data Discovery (.parquet).
+            folder_id (int): Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore `project_folder_name`
+            project_folder_name (str): Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in `src/config/project_setting.py`). 
+            schema (Dict): schema config of this Datanode. Use it for validation
+            extra_param (Dict): extra parameter to send to dsmlibrary
+
+        Raises:
+            Exception: When parameters are incorrectly
+
+        Returns:
+            A new ``DsmDataNode`` object.
+        """
+    
         self._token = credentials['token']
-        self._file_id = file_id
+        self._file_id = None
         self._folder_id = folder_id
         self._project_folder_name = project_folder_name
         self._file_name = file_name
-        self._config = config
-        self._param = param           
+        self._schema = schema
+        self._extra_param = extra_param           
         
         self.meta = {
-            "file_id": file_id,
+            "file_id": None,
             "folder_id": folder_id,
             "file_name": file_name,
-            "config": config,
+            "schema": schema,
         }
 
         self._validate_input()
@@ -110,10 +152,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             os.remove(all_record_path) # clear previous validation logs
 
 
-        if self._config:   
+        if self._schema:   
             ddf_critical_error, ddf_rule_error = validate_data(
                 ddf, 
-                config=self._config, 
+                config=self._schema, 
             )
 
             df_critical_error, df_rule_error, n_original_row = dask.compute(
@@ -139,12 +181,32 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 
                 # remove error columns
                 pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
-                ddf = ddf[~ddf[self._config['pk_column']].isin(pk_remove_list)]
+                ddf = ddf[~ddf[self._schema['pk_column']].isin(pk_remove_list)]
 
         return ddf
 
         
     def _load(self) -> Tuple[dd.DataFrame, int]:
+        """Initialise a ``DsmDataNode`` with parameter from data catalog.
+
+        Args:
+            credentials : Dictionary of credentials variable. It must be contain dsm token in key 'token'. You can define it in `local/credentials.yml` 
+            file_name : File Name to save/load in Data Discovery (.parquet).
+            folder_id : Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore `project_folder_name`
+            project_folder_name : Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in `src/config/project_setting.py`). 
+            schema : schema config of this Datanode. Use it for validation
+            extra_param : extra parameter to send to dsmlibrary
+
+        Raises:
+            ModularPipelineError: When inputs, outputs or parameters are incorrectly
+                specified, or they do not exist on the original pipeline.
+            ValueError: When underlying pipeline nodes inputs/outputs are not
+                any of the expected types (str, dict, list, or None).
+
+        Returns:
+            A new ``DsmDataNode`` object.
+        """
+        
         data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node) 
         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
@@ -298,7 +360,7 @@ class DsmReadExcelNode(DsmDataNode):
         folder_id = self._get_folder_id(data_node)
         file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
         meta, file_obj = data_node.get_file(file_id=file_id)     
-        df = pd.read_excel(file_obj, **self._param)
+        df = pd.read_excel(file_obj, **self._extra_param)
         ddf = dd.from_pandas(df, npartitions=1)
         
         self.meta['file_id'] = file_id

@@ -4,7 +4,7 @@
 <html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
@@ -14,6 +14,8 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
 
   
   
@@ -30,9 +32,9 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -84,11 +86,22 @@
               
             
             
-              <p><span class="caption-text">Contents:</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">custom_dataset</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="clickhouse_dataset.html">clickhouse_dataset module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">dsm_dataset module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">dsm_dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dsm_dataset.DsmAPIDataSet"><code class="docutils literal notranslate"><span class="pre">DsmAPIDataSet</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dsm_dataset.DsmDataNode"><code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dsm_dataset.DsmDataNode.exists"><code class="docutils literal notranslate"><span class="pre">DsmDataNode.exists()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#dsm_dataset.DsmDataNodeAppend"><code class="docutils literal notranslate"><span class="pre">DsmDataNodeAppend</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dsm_dataset.DsmListDataNode"><code class="docutils literal notranslate"><span class="pre">DsmListDataNode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dsm_dataset.DsmReadExcelNode"><code class="docutils literal notranslate"><span class="pre">DsmReadExcelNode</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dsm_dataset.DsmSQLDataNode"><code class="docutils literal notranslate"><span class="pre">DsmSQLDataNode</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -161,27 +174,108 @@
            <div itemprop="articleBody">
             
   <section id="module-dsm_dataset">
-<span id="dsm-dataset-module"></span><h1>dsm_dataset module<a class="headerlink" href="#module-dsm_dataset" title="Permalink to this headline">¶</a></h1>
+<span id="dsm-dataset-module"></span><h1>dsm_dataset module<a class="headerlink" href="#module-dsm_dataset" title="Permalink to this heading">¶</a></h1>
 <dl class="py class">
-<dt id="dsm_dataset.DsmAPIDataSet">
-<em class="property">class </em><code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">DsmAPIDataSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kw</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmAPIDataSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmAPIDataSet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">requests.models.Response</span></code>]</p>
+<dt class="sig sig-object py" id="dsm_dataset.DsmAPIDataSet">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dsm_dataset.</span></span><span class="sig-name descname"><span class="pre">DsmAPIDataSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmAPIDataSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmAPIDataSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">APIDataSet</span></code></p>
+<p>Creates a new instance of <code class="docutils literal notranslate"><span class="pre">APIDataSet</span></code> to fetch data from an API endpoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> – The API URL endpoint.</p></li>
+<li><p><strong>method</strong> – The Method of the request, GET, POST, PUT, DELETE, HEAD, etc…</p></li>
+<li><p><strong>data</strong> – The request payload, used for POST, PUT, etc requests
+<a class="reference external" href="https://requests.readthedocs.io/en/latest/user/quickstart/#more-complicated-post-requests">https://requests.readthedocs.io/en/latest/user/quickstart/#more-complicated-post-requests</a></p></li>
+<li><p><strong>params</strong> – The url parameters of the API.
+<a class="reference external" href="https://requests.readthedocs.io/en/latest/user/quickstart/#passing-parameters-in-urls">https://requests.readthedocs.io/en/latest/user/quickstart/#passing-parameters-in-urls</a></p></li>
+<li><p><strong>headers</strong> – The HTTP headers.
+<a class="reference external" href="https://requests.readthedocs.io/en/latest/user/quickstart/#custom-headers">https://requests.readthedocs.io/en/latest/user/quickstart/#custom-headers</a></p></li>
+<li><p><strong>auth</strong> – Anything <code class="docutils literal notranslate"><span class="pre">requests</span></code> accepts. Normally it’s either <code class="docutils literal notranslate"><span class="pre">('login',</span> <span class="pre">'password')</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">AuthBase</span></code>, <code class="docutils literal notranslate"><span class="pre">HTTPBasicAuth</span></code> instance for more complex cases. Any
+iterable will be cast to a tuple.</p></li>
+<li><p><strong>json</strong> – The request payload, used for POST, PUT, etc requests, passed in
+to the json kwarg in the requests object.
+<a class="reference external" href="https://requests.readthedocs.io/en/latest/user/quickstart/#more-complicated-post-requests">https://requests.readthedocs.io/en/latest/user/quickstart/#more-complicated-post-requests</a></p></li>
+<li><p><strong>timeout</strong> – The wait time in seconds for a response, defaults to 1 minute.
+<a class="reference external" href="https://requests.readthedocs.io/en/latest/user/quickstart/#timeouts">https://requests.readthedocs.io/en/latest/user/quickstart/#timeouts</a></p></li>
+<li><p><strong>credentials</strong> – same as <code class="docutils literal notranslate"><span class="pre">auth</span></code>. Allows specifying <code class="docutils literal notranslate"><span class="pre">auth</span></code> secrets in
+credentials.yml.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – if both <code class="docutils literal notranslate"><span class="pre">credentials</span></code> and <code class="docutils literal notranslate"><span class="pre">auth</span></code> are specified.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
-<dt id="dsm_dataset.DsmDataNode">
-<em class="property">class </em><code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">DsmDataNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">file_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">folder_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">project_folder_name</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmDataNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmDataNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>]</p>
+<dt class="sig sig-object py" id="dsm_dataset.DsmDataNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dsm_dataset.</span></span><span class="sig-name descname"><span class="pre">DsmDataNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmDataNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmDataNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code>]</p>
+<p><code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> loads/saves data from/to Data Platform.</p>
+<p>Example adding a catalog entry with
+<a class="reference external" href="https://kedro.readthedocs.io/en/stable/data/data_catalog.html#use-the-data-catalog-with-the-yaml-api">YAML API</a>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># for landing dataset</span><span class="w"></span>
+<span class="nt">l.&lt;your_desired_name&gt;</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmDataNode</span><span class="w"></span>
+<span class="w">    </span><span class="nt">project_folder_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Landing</span><span class="w"></span>
+<span class="w">    </span><span class="nt">file_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;your_desired_name&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="nt">credentials</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dsmlibrary</span><span class="w"></span>
+
+<span class="c1"># for Staging dataset</span><span class="w"></span>
+<span class="nt">s.&lt;database_name&gt;_&lt;table_name&gt;</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmDataNode</span><span class="w"></span>
+<span class="w">    </span><span class="nt">project_folder_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Staging</span><span class="w"></span>
+<span class="w">    </span><span class="nt">file_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;database_name&gt;_&lt;table_name&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="nt">credentials</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dsmlibrary</span><span class="w"></span>
+<span class="w">    </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="w">        </span><span class="s">&#39;columns&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"></span>
+<span class="w">            </span><span class="s">&#39;TR_NO&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="s">&#39;data_type&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&#39;int&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;nullable&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;is_required&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;validation_rule&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">]},</span><span class="w"></span>
+<span class="w">            </span><span class="s">&#39;FILING_DATE&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="s">&#39;data_type&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&#39;datetime64[ns]&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;nullable&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;is_required&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">},</span><span class="w"></span>
+<span class="w">            </span><span class="s">&#39;REG_NO&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="s">&#39;data_type&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&#39;string&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;nullable&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;is_required&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;validation_rule&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">4</span><span class="p p-Indicator">]},</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">},</span><span class="w"></span>
+<span class="w">        </span><span class="s">&#39;validation_rule&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">6</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">9</span><span class="p p-Indicator">],</span><span class="w"></span>
+<span class="w">        </span><span class="s">&#39;pk_column&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&#39;TR_NO&#39;</span><span class="p p-Indicator">,</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">}</span><span class="w"></span>
+
+<span class="c1"># for Integration dataset</span><span class="w"></span>
+<span class="nt">i.&lt;database_name&gt;_&lt;table_name&gt;</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmDataNode</span><span class="w"></span>
+<span class="w">    </span><span class="nt">project_folder_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Integration</span><span class="w"></span>
+<span class="w">    </span><span class="nt">file_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;database_name&gt;_&lt;table_name&gt;</span><span class="w"></span>
+<span class="w">    </span><span class="nt">credentials</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dsmlibrary</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Initialize a <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> with parameter from data catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
+<li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
+<li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – When parameters are incorrectly</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> object.</p>
+</dd>
+</dl>
 <dl class="py method">
-<dt id="dsm_dataset.DsmDataNode.exists">
-<code class="sig-name descname">exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmDataNode.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmDataNode.exists" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="dsm_dataset.DsmDataNode.exists">
+<span class="sig-name descname"><span class="pre">exists</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/dsm_dataset.html#DsmDataNode.exists"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmDataNode.exists" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks whether a data set’s output already exists by calling
 the provided _exists() method.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Flag indicating whether the output already exists.</p>
 </dd>
-<dt class="field-even">Raises</dt>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>DataSetError</strong> – when underlying exists method raises error.</p>
 </dd>
 </dl>
@@ -190,33 +284,104 @@ the provided _exists() method.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="dsm_dataset.DsmDataNodeAppend">
-<em class="property">class </em><code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">DsmDataNodeAppend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">file_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">folder_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">project_folder_name</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmDataNodeAppend"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmDataNodeAppend" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>]</p>
+<dt class="sig sig-object py" id="dsm_dataset.DsmDataNodeAppend">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dsm_dataset.</span></span><span class="sig-name descname"><span class="pre">DsmDataNodeAppend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmDataNodeAppend"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmDataNodeAppend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dsm_dataset.DsmDataNode" title="dsm_dataset.DsmDataNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsmDataNode</span></code></a></p>
+<p>Initialize a <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> with parameter from data catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
+<li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
+<li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – When parameters are incorrectly</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> object.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
-<dt id="dsm_dataset.DsmListDataNode">
-<em class="property">class </em><code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">DsmListDataNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">file_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">folder_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">project_folder_name</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmListDataNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmListDataNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>]</p>
+<dt class="sig sig-object py" id="dsm_dataset.DsmListDataNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dsm_dataset.</span></span><span class="sig-name descname"><span class="pre">DsmListDataNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmListDataNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmListDataNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dsm_dataset.DsmDataNode" title="dsm_dataset.DsmDataNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsmDataNode</span></code></a></p>
+<p>Initialize a <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> with parameter from data catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
+<li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
+<li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – When parameters are incorrectly</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> object.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
-<dt id="dsm_dataset.DsmReadExcelNode">
-<em class="property">class </em><code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">DsmReadExcelNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">file_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">folder_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">project_folder_name</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmReadExcelNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmReadExcelNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>]</p>
+<dt class="sig sig-object py" id="dsm_dataset.DsmReadExcelNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dsm_dataset.</span></span><span class="sig-name descname"><span class="pre">DsmReadExcelNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmReadExcelNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmReadExcelNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dsm_dataset.DsmDataNode" title="dsm_dataset.DsmDataNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsmDataNode</span></code></a></p>
+<p>Initialize a <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> with parameter from data catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
+<li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
+<li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – When parameters are incorrectly</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> object.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
-<dt id="dsm_dataset.DsmSQLDataNode">
-<em class="property">class </em><code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">DsmSQLDataNode</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">credentials</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Any<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">file_name</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">folder_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">project_folder_name</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">file_id</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>int<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">config</span><span class="p">:</span> <span class="n">Optional<span class="p">[</span>Dict<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">param</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="default_value">{}</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmSQLDataNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.DsmSQLDataNode" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kedro.io.core.AbstractDataSet</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dask.dataframe.core.DataFrame</span></code>]</p>
+<dt class="sig sig-object py" id="dsm_dataset.DsmSQLDataNode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dsm_dataset.</span></span><span class="sig-name descname"><span class="pre">DsmSQLDataNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">credentials</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#DsmSQLDataNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dsm_dataset.DsmSQLDataNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dsm_dataset.DsmDataNode" title="dsm_dataset.DsmDataNode"><code class="xref py py-class docutils literal notranslate"><span class="pre">DsmDataNode</span></code></a></p>
+<p>Initialize a <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> with parameter from data catalog.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
+<li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
+<li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Exception</strong> – When parameters are incorrectly</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A new <code class="docutils literal notranslate"><span class="pre">DsmDataNode</span></code> object.</p>
+</dd>
+</dl>
 </dd></dl>
-
-<dl class="py function">
-<dt id="dsm_dataset.write_dummy_file">
-<code class="sig-prename descclassname">dsm_dataset.</code><code class="sig-name descname">write_dummy_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_name</span></em>, <em class="sig-param"><span class="n">directory_id</span></em>, <em class="sig-param"><span class="n">data_node</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dsm_dataset.html#write_dummy_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dsm_dataset.write_dummy_file" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </section>
 

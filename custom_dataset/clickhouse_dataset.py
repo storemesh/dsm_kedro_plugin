@@ -14,6 +14,17 @@ from dsmlibrary.clickhouse import ClickHouse
 
 
 def get_info(ddf: dd.DataFrame):
+    """Initialise a ``DsmDataNode`` with parameter from data catalog.
+
+    Args:
+        ddf (pd.DataFrame): Dictionary of credentials variable. It must be contain dsm token in key 'token'. You can define it in `local/credentials.yml` 
+
+    Raises:
+        Exception: When parameters are incorrectly
+
+    Returns:
+        A new ``DsmDataNode`` object.
+    """
     datas = [{'column_name': col, 'data_type': str(ddf[col].dtype)} for col in ddf.columns]
     return datas
 

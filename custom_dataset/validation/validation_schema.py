@@ -19,7 +19,7 @@ class Column(BaseModel):
     nullable: bool = False    
     validation_rule: List[int] = []
 
-class Configs(BaseModel):
+class SchemaConfigs(BaseModel):
     columns: Dict[str, Column] = []
     is_strict: bool = False
     validation_rule: List[int] = []
@@ -99,7 +99,7 @@ def generate_schema(config):
 
 # @profile 
 def validate_data(ddf, config):
-    config_validated = Configs(**config)
+    config_validated = SchemaConfigs(**config)
     validated_config = config_validated.dict()
     schema = generate_schema(validated_config)
 
