@@ -16,6 +16,18 @@ from generate_setting import KEDRO_PROJECT_BASE, JINJA_PATH, SQL_DATANODE_CATALO
 
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, OBJECT_STORAGE_SECUE
 
+def get_table_display_name(table_name):
+    snake_table_name = snake_case(table_name)
+    if table_name[:2] == 't_':
+        object_table_name = table_name
+        show_table_name = snake_table_name[2:]
+    else:
+        object_table_name = camel_case(table_name)
+        
+    return object_table_name, show_table_name
+    
+    
+    
 def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_name, token, write_mode=False):
     if write_mode:
         with open(SQL_DATANODE_CATALOG_PATH, 'w') as f:
@@ -46,15 +58,11 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
         database_name = database_meta['name']
         database_name = database_name.replace(' ', '_')
 
-        for table_name in table_list:
-            snake_table_name = snake_case(table_name)
-            catalog_name = f'sql.{database_name}_{snake_table_name}'
-            file_name = f'{database_name}_{snake_table_name}'   
-
-            if table_name[:2] == 't_':
-                object_table_name = table_name
-            else:
-                object_table_name = camel_case(table_name) 
+        for table_name in table_list:  
+            object_table_name, show_table_name = get_table_display_name(table_name)             
+            
+            catalog_name = f'sql.{database_name}_{show_table_name}'
+            file_name = f'{database_name}_{show_table_name}'   
             
             # get query function
             query_template = f'''
@@ -149,9 +157,9 @@ def generate_landing_pipeline(
                 if (not database_id in generate_source_dict) or (not table_name in generate_source_dict[database_id]):
                     check_generate_file = False
             
-            snake_table_name = snake_case(table_name)
-            sql_query_catalog_name = f'sql.{database_name}_{snake_table_name}'
-            landing_file_name = f'{database_name}_{snake_table_name}'
+            _, show_table_name = get_table_display_name(table_name)
+            sql_query_catalog_name = f'sql.{database_name}_{show_table_name}'
+            landing_file_name = f'{database_name}_{show_table_name}'
             landing_catalog_name = f'l.{landing_file_name}'
             print(landing_catalog_name)
 

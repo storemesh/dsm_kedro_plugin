@@ -24,7 +24,7 @@ from src.config.validation_rules import rules
 start_pipeline_folder = 'logs/validation_logs/start'
 validation_log_dir = 'logs/validation_logs/'
 
-base_url = "https://api.discovery.dev.data.storemesh.com/api"
+base_url = os.path.join(DATAPLATFORM_API_URI, 'api') #"https://api.discovery.dev.data.storemesh.com/api"
 run_pipeline_url = f"{base_url}/logs/run-pipeline/"
 file_meta_url = f"{base_url}/v2/file"
 
@@ -295,6 +295,10 @@ def get_pipeline_id(project_name, pipeline_name, token):
     headers = _get_header(token)
 
     res = requests.get(f'{base_url}/logs/project/?search={project_name}', headers=headers)
+    import pdb; pdb.set_trace()
+    if res.status_code > 201:
+        raise Exception('Exception: ', res.json())
+    
     project_list = res.json()
     
     try:
