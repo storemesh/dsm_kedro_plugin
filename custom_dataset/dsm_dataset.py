@@ -88,8 +88,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             credentials (Dict[str, Any]): Dictionary of credentials variable. It must be contain dsm token in key 'token'. You can define it in `local/credentials.yml` 
             file_name (str): File Name to save/load in Data Discovery (.parquet).
             folder_id (int): Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore `project_folder_name`
-            project_folder_name (str): Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in `src/config/project_setting.py`). 
-            schema (Dict): schema config of this Datanode. Use it for validation
+            project_folder_name (str): Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in ``src/config/project_setting.py``). 
+            schema (Dict): schema config of this Datanode. Use it for validation. You need to define validation rules in ``src/config/validation_rules.py`` first.
             extra_param (Dict): extra parameter to send to dsmlibrary
 
         Raises:

@@ -243,8 +243,8 @@
 <span class="sd">            credentials (Dict[str, Any]): Dictionary of credentials variable. It must be contain dsm token in key &#39;token&#39;. You can define it in `local/credentials.yml` </span>
 <span class="sd">            file_name (str): File Name to save/load in Data Discovery (.parquet).</span>
 <span class="sd">            folder_id (int): Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore `project_folder_name`</span>
-<span class="sd">            project_folder_name (str): Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in `src/config/project_setting.py`). </span>
-<span class="sd">            schema (Dict): schema config of this Datanode. Use it for validation</span>
+<span class="sd">            project_folder_name (str): Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in ``src/config/project_setting.py``). </span>
+<span class="sd">            schema (Dict): schema config of this Datanode. Use it for validation. You need to define validation rules in ``src/config/validation_rules.py`` first.</span>
 <span class="sd">            extra_param (Dict): extra parameter to send to dsmlibrary</span>
 
 <span class="sd">        Raises:</span>

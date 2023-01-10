@@ -254,8 +254,8 @@ credentials.yml.</p></li>
 <li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
 <li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
-<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
-<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <code class="docutils literal notranslate"><span class="pre">src/config/project_setting.py</span></code>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation. You need to define validation rules in <code class="docutils literal notranslate"><span class="pre">src/config/validation_rules.py</span></code> first.</p></li>
 <li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
 </ul>
 </dd>
@@ -294,8 +294,8 @@ the provided _exists() method.</p>
 <li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
 <li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
-<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
-<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <code class="docutils literal notranslate"><span class="pre">src/config/project_setting.py</span></code>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation. You need to define validation rules in <code class="docutils literal notranslate"><span class="pre">src/config/validation_rules.py</span></code> first.</p></li>
 <li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
 </ul>
 </dd>
@@ -319,8 +319,8 @@ the provided _exists() method.</p>
 <li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
 <li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
-<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
-<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <code class="docutils literal notranslate"><span class="pre">src/config/project_setting.py</span></code>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation. You need to define validation rules in <code class="docutils literal notranslate"><span class="pre">src/config/validation_rules.py</span></code> first.</p></li>
 <li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
 </ul>
 </dd>
@@ -344,8 +344,8 @@ the provided _exists() method.</p>
 <li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
 <li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
-<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
-<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <code class="docutils literal notranslate"><span class="pre">src/config/project_setting.py</span></code>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation. You need to define validation rules in <code class="docutils literal notranslate"><span class="pre">src/config/validation_rules.py</span></code> first.</p></li>
 <li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
 </ul>
 </dd>
@@ -369,8 +369,8 @@ the provided _exists() method.</p>
 <li><p><strong>credentials</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – Dictionary of credentials variable. It must be contain dsm token in key ‘token’. You can define it in <cite>local/credentials.yml</cite></p></li>
 <li><p><strong>file_name</strong> (<em>str</em>) – File Name to save/load in Data Discovery (.parquet).</p></li>
 <li><p><strong>folder_id</strong> (<em>int</em>) – Folder Id to save/load datanode in Data Discovery. If it is set, it will ignore <cite>project_folder_name</cite></p></li>
-<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <cite>src/config/project_setting.py</cite>).</p></li>
-<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation</p></li>
+<li><p><strong>project_folder_name</strong> (<em>str</em>) – Folder Name to save/load datanode at root of project in Data Discovery (root project is defined in <code class="docutils literal notranslate"><span class="pre">src/config/project_setting.py</span></code>).</p></li>
+<li><p><strong>schema</strong> (<em>Dict</em>) – schema config of this Datanode. Use it for validation. You need to define validation rules in <code class="docutils literal notranslate"><span class="pre">src/config/validation_rules.py</span></code> first.</p></li>
 <li><p><strong>extra_param</strong> (<em>Dict</em>) – extra parameter to send to dsmlibrary</p></li>
 </ul>
 </dd>
