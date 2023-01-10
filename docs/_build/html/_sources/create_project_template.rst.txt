@@ -1,0 +1,7 @@
+create\_project\_template module
+================================
+
+.. automodule:: create_project_template
+   :members:
+   :undoc-members:
+   :show-inheritance:
