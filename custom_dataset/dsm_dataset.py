@@ -233,6 +233,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         with ProgressBar():
             data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
         
+        time.sleep(2) # wait for file finish writing
+        
         ## read validation logs
         logger.info('      Read Validation:     ')
         file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
