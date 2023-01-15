@@ -23,6 +23,7 @@ def get_table_display_name(table_name):
         show_table_name = snake_table_name[2:]
     else:
         object_table_name = camel_case(table_name)
+        show_table_name = snake_table_name
         
     return object_table_name, show_table_name
     
