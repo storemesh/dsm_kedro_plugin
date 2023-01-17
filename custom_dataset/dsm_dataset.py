@@ -250,10 +250,14 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     def _describe(self) -> Dict[str, Any]:
         pass
     
+    def _get_file_extension(self):
+        return 'parquet'
+    
     def exists(self) -> Dict[str, Any]:
         data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node)
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
+        file_extension = self._get_file_extension()
+        file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
         
@@ -262,9 +266,13 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
     
 class DsmListDataNode(DsmDataNode):
+    def _get_file_extension(self):
+        return 'listDataNode'
+    
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = self._get_data_node()
-        file_id = data_node.get_file_id(name=f"{self._file_name}.listDataNode", directory_id=self._folder_id)
+        file_extension = self._get_file_extension()
+        file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=self._folder_id)
         
         ddf = data_node.get_update_data(file_id=file_id)       
         self.meta['file_id'] = file_id

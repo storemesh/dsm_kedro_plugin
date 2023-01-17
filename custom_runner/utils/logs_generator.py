@@ -295,7 +295,6 @@ def get_pipeline_id(project_name, pipeline_name, token):
     headers = _get_header(token)
 
     res = requests.get(f'{base_url}/logs/project/?search={project_name}', headers=headers)
-    import pdb; pdb.set_trace()
     if res.status_code > 201:
         raise Exception('Exception: ', res.json())
     
