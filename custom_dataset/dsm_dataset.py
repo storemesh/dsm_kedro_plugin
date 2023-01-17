@@ -115,6 +115,20 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         }
 
         self._validate_input()
+        
+    def _get_dask_dataframe(self, file_extension=None):        
+        data_node = self._get_data_node()
+        folder_id = self._get_folder_id(data_node) 
+        file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
+        
+        ddf = data_node.read_ddf(file_id=file_id)
+        self.meta['file_id'] = file_id
+        self.meta['folder_id'] = folder_id
+        
+        return (ddf, self.meta)
+        
+        
+        return (ddf, self.meta)       
 
     def _validate_input(self):
         if (self._folder_id == None) and (self._project_folder_name == None):
@@ -206,16 +220,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         Returns:
             A new ``DsmDataNode`` object.
         """
-        
-        data_node = self._get_data_node()
-        folder_id = self._get_folder_id(data_node) 
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=folder_id)
-        
-        ddf = data_node.read_ddf(file_id=file_id)
-        self.meta['file_id'] = file_id
-        self.meta['folder_id'] = folder_id
-        
-        return (ddf, self.meta)
+        return self._get_dask_dataframe(file_extension='parquet')   
 
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
         start_time = datetime.datetime.now()
@@ -369,7 +374,77 @@ class DsmReadExcelNode(DsmDataNode):
         self.meta['folder_id'] = folder_id
         
         return (ddf, self.meta)
-        # return (ddf, file_id)
     
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
         raise ValueError('Not support save Excel yet')
+
+
+class DsmReadCSVNode(DsmDataNode):    
+    def _load(self) -> Tuple[dd.DataFrame, int]:           
+        return self._get_dask_dataframe(file_extension='csv')    
+    
+    def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
+        ddf, meta_list = data
+        lineage_list = [ item['file_id'] for item in meta_list]
+        
+        save_path = os.path.join('./data/01_raw/', self._file_name, '.csv')
+        ddf.to_csv(save_path, index=False)
+        data_node = DataNode(self._token)        
+        data_node.upload_file(directory_id=self._folder_id, file_path=save_path, description="", lineage=lineage_list)
+
+    def _describe(self) -> Dict[str, Any]:
+        pass
+
+
+class DsmReadFileObject(DsmDataNode):    
+    def _load(self) -> Tuple[dd.DataFrame, int]:
+        data_node = DataNode(self._token) 
+        folder_id = self._get_folder_id(data_node) 
+        file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
+        meta, file_obj = data_node.get_file(file_id=file_id)        
+        
+        self.meta['file_id'] = file_id
+        self.meta['folder_id'] = folder_id
+        
+        return (file_obj, self.meta)
+    
+    def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
+#         start_time = datetime.datetime.now()
+#         ddf, lineage_list = data
+        
+#         save_path = os.path.join('./data/01_raw/', self._file_name)
+#         data_node = DataNode(self._token)   
+#         data_node.upload_file(directory_id=self._folder_id, file_path=save_path, description=f"ds {self._file_name}", lineage=lineage_list)
+        raise ValueError('Not support save FileObject yet')
+
+    def _describe(self) -> Dict[str, Any]:
+        pass
+    
+class DsmJSONFile(DsmDataNode):    
+    def _load(self) -> Tuple[dd.DataFrame, int]:
+        data_node = DataNode(self._token) 
+        folder_id = self._get_folder_id(data_node)
+        file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
+        meta, file_obj = data_node.get_file(file_id=file_id)            
+        json_data = json.load(file_obj) 
+        
+        self.meta['file_id'] = file_id
+        self.meta['folder_id'] = folder_id
+        
+        return (json_data, self.meta)
+    
+    def _save(self, data: Tuple[dict, List[int]]) -> None:
+        json_data, meta_list = data
+        lineage_list = [ item['file_id'] for item in meta_list]
+         
+        save_path = os.path.join('./data/01_raw/', self._file_name)  
+        json_object = json.dumps(json_data, indent=4, default=str)
+        with open(save_path, "w") as outfile:
+            outfile.write(json_object)        
+        
+        data_node = DataNode(self._token)   
+        folder_id = self._get_folder_id(data_node)
+        data_node.upload_file(directory_id=folder_id, file_path=save_path, description=f"data of {self._file_name}", lineage=lineage_list, replace=True)
+
+    def _describe(self) -> Dict[str, Any]:
+        pass
