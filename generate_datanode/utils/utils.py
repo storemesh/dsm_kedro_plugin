@@ -1,5 +1,5 @@
 from re import sub
-from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL
+from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL, SmallInteger
 from sqlalchemy.dialects.mysql.types import INTEGER as mysql_INTEGER, VARCHAR as mysql_VARCHAR, TINYINT as mysql_TINYINT
 from sqlalchemy import sql
 import pandas as pd
@@ -33,6 +33,7 @@ map_dict = {
     Date: 'string',
     Text: 'string',
     DECIMAL: 'float',
+    SmallInteger: 'Int32',
     
     
     ## mysql
@@ -55,9 +56,15 @@ def get_numpy_schema(class_obj):
                     pk_column = property
                 
                 class_dtype = type(value.type)
+                
+                if class_dtype not in map_dict:
+                    raise KeyError(f"The data type of column '{property}' is {class_dtype} that's not exist in 'map_dict' (use for auto generate schema). Please import and add it in dsm_kedro_plugin/generate_datanode/utils/utils.py")
+                
                 schema[property] = map_dict[class_dtype]
-            except Exception as e:
-                print(f'{property}: {e}')
+                
+            except AttributeError as e:
+                # not do anything yet for InstrumentedAttribute Warning
+                pass
                 
     if not pk_column:
         raise Exception(f'table "{class_obj}" has no primary key')

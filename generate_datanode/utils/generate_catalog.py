@@ -60,6 +60,7 @@ def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_n
         database_name = database_name.replace(' ', '_')
 
         for table_name in table_list:  
+            print(f'    --- table_name: {table_name} ----- ')
             object_table_name, show_table_name = get_table_display_name(table_name)             
             
             catalog_name = f'sql.{database_name}_{show_table_name}'
