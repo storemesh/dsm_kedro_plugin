@@ -166,18 +166,17 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             os.remove(all_record_path) # clear previous validation logs
 
 
-        if self._schema:   
+        if self._schema:               
             ddf_critical_error, ddf_rule_error = validate_data(
                 ddf, 
                 config=self._schema, 
             )
-
             df_critical_error, df_rule_error, n_original_row = dask.compute(
                 ddf_critical_error,
                 ddf_rule_error,
                 ddf.shape[0]
             )
-
+            
             all_record = { 'all_record': n_original_row}
             with open(all_record_path, 'w') as f:
                 json.dump(all_record, f)
@@ -232,7 +231,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         file_id = None
 
         logger.info('      Write Validation:     ')
-        ddf = self._validate_data(ddf, type='write')
+        with ProgressBar():
+            ddf = self._validate_data(ddf, type='write')
         
         logger.info('      Write File:     ')
         with ProgressBar():
@@ -241,10 +241,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         time.sleep(2) # wait for file finish writing
         
         ## read validation logs
-        logger.info('      Read Validation:     ')
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-        ddf_read = data_node.read_ddf(file_id=file_id)
-        ddf_read = self._validate_data(ddf_read, type='read')
+        # logger.info('      Read Validation:     ')
+        # file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+        # ddf_read = data_node.read_ddf(file_id=file_id)
+        # ddf_read = self._validate_data(ddf_read, type='read')
 
 
     def _describe(self) -> Dict[str, Any]:
