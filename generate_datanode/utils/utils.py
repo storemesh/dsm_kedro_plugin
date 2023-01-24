@@ -1,6 +1,7 @@
 from re import sub
-from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL
+from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL, SmallInteger
 from sqlalchemy.dialects.mysql.types import INTEGER as mysql_INTEGER, VARCHAR as mysql_VARCHAR, TINYINT as mysql_TINYINT
+from sqlalchemy.dialects.mssql.base import TINYINT
 from sqlalchemy import sql
 import pandas as pd
 import dask.dataframe as dd
@@ -33,6 +34,8 @@ map_dict = {
     Date: 'string',
     Text: 'string',
     DECIMAL: 'float',
+    SmallInteger:'Int64',
+    TINYINT: 'Int64',
     
     
     ## mysql
