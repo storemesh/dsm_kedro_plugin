@@ -418,14 +418,14 @@ def _read_monad_logs(
         folder_id = datanode_detail[dataset_name]['meta']['folder_id']
         file_name = datanode_detail[dataset_name]['meta']['file_name']
         
-        log_filename = f'{folder_id}_{file_name}_{type}.csv'
+        log_filename = f'{folder_id}_{file_name}_{type}.parquet'
         log_path = os.path.join(validation_log_dir, log_filename)
         all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_{type}_all_record.json')
                 
         log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
 
         if os.path.exists(log_path):
-            ddf_log = dd.read_csv(log_path)
+            ddf_log = dd.read_parquet(log_path)
             
             ddf_merge = ddf_log.merge(df_val_types, on='rule_name')
             

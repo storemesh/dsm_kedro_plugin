@@ -154,7 +154,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
     def _validate_data(self, ddf, type):
         folder_path = 'logs/validation_logs/'
-        save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}.csv')
+        save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}.parquet')
         all_record_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}_all_record.json')
         if not os.path.exists(folder_path):
             os.makedirs(folder_path, exist_ok=True)
@@ -191,7 +191,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 )
                 
             if df_rule_error.shape[0] > 0:
-                df_rule_error.to_csv(save_path, index=False)
+                df_rule_error.to_parquet(save_path, index=False)
                 
                 # remove error columns
                 pk_remove_list = df_rule_error[df_rule_error['is_required'] == True]['pk'].unique()
@@ -245,7 +245,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 ## save data local
                 logger.info('----- Do Validation ------')
                 logger.info('      1. Write Temp File:     ')
-                save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}'
+                save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}.parquet'
                 ddf.to_parquet(save_file_name)
                 
                 logger.info('      2. Read Temp File:     ')
