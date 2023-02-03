@@ -199,6 +199,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
         return ddf
 
+    def _validate_and_save_data(self, ddf, type):
+        pass
+        # if self._schema:
+            
+            
+        # else:
+            # no validate
+
+    
         
     def _load(self) -> Tuple[dd.DataFrame, int]:
         """Initialise a ``DsmDataNode`` with parameter from data catalog.
@@ -231,21 +240,34 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self._folder_id = self._get_folder_id(data_node)
         file_id = None
 
-        logger.info('      Write Validation:     ')
         with ProgressBar():
-            ddf = self._validate_data(ddf, type='write')
-        
-        logger.info('      Write File:     ')
-        with ProgressBar():
-            data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
-        
-        time.sleep(2) # wait for file finish writing
-        
-        ## read validation logs
-        logger.info('      Read Validation:     ')
-        file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
-        ddf_read = data_node.read_ddf(file_id=file_id)
-        ddf_read = self._validate_data(ddf_read, type='read')
+            if self._schema:
+                ## save data local
+                logger.info('----- Do Validation ------')
+                logger.info('      1. Write Temp File:     ')
+                save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}'
+                ddf.to_parquet(save_file_name)
+                
+                logger.info('      2. Read Temp File:     ')
+                ddf_read = dd.read_parquet(save_file_name)
+                
+                logger.info('      3. Writing Validation:     ')
+                ddf_read = self._validate_data(ddf_read, type='write')
+                
+                logger.info('      4. Write DataNode:     ')
+                data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+                
+                time.sleep(2) # wait for file finish writing
+                
+                ## read validation logs
+                logger.info('      5. Reading Validation:     ')
+                file_id = data_node.get_file_id(name=f"{self._file_name}.parquet", directory_id=self._folder_id)
+                ddf_read = data_node.read_ddf(file_id=file_id)
+                ddf_read = self._validate_data(ddf_read, type='read')
+                
+            else:
+                # no validate, save data directly to data platform
+                data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
 
     def _describe(self) -> Dict[str, Any]:
