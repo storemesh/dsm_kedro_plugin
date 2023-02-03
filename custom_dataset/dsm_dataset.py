@@ -398,7 +398,7 @@ class DsmReadCSVNode(DsmDataNode):
         
         save_path = os.path.join('./data/01_raw/', self._file_name, '.csv')
         ddf.to_csv(save_path, index=False)
-        data_node = DataNode(self._token)        
+        data_node = self._get_data_node()    
         data_node.upload_file(directory_id=self._folder_id, file_path=save_path, description="", lineage=lineage_list)
 
     def _describe(self) -> Dict[str, Any]:
@@ -407,7 +407,7 @@ class DsmReadCSVNode(DsmDataNode):
 
 class DsmReadFileObject(DsmDataNode):    
     def _load(self) -> Tuple[dd.DataFrame, int]:
-        data_node = DataNode(self._token) 
+        data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node) 
         file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
         meta, file_obj = data_node.get_file(file_id=file_id)        
@@ -431,7 +431,7 @@ class DsmReadFileObject(DsmDataNode):
     
 class DsmJSONFile(DsmDataNode):    
     def _load(self) -> Tuple[dd.DataFrame, int]:
-        data_node = DataNode(self._token) 
+        data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node)
         file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
         meta, file_obj = data_node.get_file(file_id=file_id)            
@@ -451,7 +451,7 @@ class DsmJSONFile(DsmDataNode):
         with open(save_path, "w") as outfile:
             outfile.write(json_object)        
         
-        data_node = DataNode(self._token)   
+        data_node = self._get_data_node()   
         folder_id = self._get_folder_id(data_node)
         data_node.upload_file(directory_id=folder_id, file_path=save_path, description=f"data of {self._file_name}", lineage=lineage_list, replace=True)
 

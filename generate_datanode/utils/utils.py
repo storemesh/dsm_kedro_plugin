@@ -1,6 +1,7 @@
 from re import sub
-from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL, SmallInteger
-from sqlalchemy.dialects.mysql.types import INTEGER as mysql_INTEGER, VARCHAR as mysql_VARCHAR, TINYINT as mysql_TINYINT
+from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL, SmallInteger, CHAR, Enum
+from sqlalchemy.dialects.mssql.base import MONEY as mysql_MONEY
+from sqlalchemy.dialects.mysql.types import INTEGER as mysql_INTEGER, VARCHAR as mysql_VARCHAR, TINYINT as mysql_TINYINT, TEXT as mysql_TEXT
 from sqlalchemy.dialects.mssql.base import TINYINT
 from sqlalchemy import sql
 import pandas as pd
@@ -36,12 +37,17 @@ map_dict = {
     DECIMAL: 'float',
     SmallInteger: 'Int32',
     TINYINT: 'Int64',
-    
+    CHAR: 'string',
+    Enum: 'string',
+
     
     ## mysql
     mysql_INTEGER: 'Int64',
     mysql_VARCHAR: 'string',
     mysql_TINYINT: 'Int32',
+    mysql_MONEY: 'float',
+    mysql_TEXT: 'string',
+
 }
 
 

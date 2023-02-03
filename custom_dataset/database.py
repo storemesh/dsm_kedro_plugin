@@ -11,6 +11,8 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 import pandas as pd
 from dsmlibrary.clickhouse import ClickHouse
+import pymongo
+from tqdm import tqdm
 
 
 def get_info(ddf: dd.DataFrame):
@@ -84,3 +86,33 @@ class ClickHouseDataset(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         
         
     
+class MongoDBDataset(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
+    def __init__(
+            self, 
+            credentials: Dict[str, Any],   
+            database_name: str,
+            collection_name: str,
+            query: Dict = {},
+        ):
+        self._connection = credentials['connection']
+        self._database_name = database_name
+        self._collection_name = collection_name
+        self._query = query
+
+    def _load(self) -> List[Dict]:
+        client = pymongo.MongoClient(self._connection)    
+        collection = client[self._database_name][self._collection_name]        
+        collection_size = collection.estimated_document_count()
+        cursor = collection.find(self._query)
+        
+        result_list = []
+        for document in tqdm(cursor, total=collection_size):
+            result_list.append(document)
+        return result_list
+            
+    def _save(self, ddf: dd.DataFrame) -> None:
+        raise NotImplementedError
+
+
+    def _describe(self) -> Dict[str, Any]:
+        pass
