@@ -192,7 +192,8 @@ def gen_log_finish(pipeline_name):
 
     ## function detail, input_edges, output_edges, monad input and monad output
     functions_detail = {}        
-    monad_log_list = {}
+    monad_read_list = {}
+    monad_write_list = {}
     input_edges = []
     output_edges = []
     
@@ -221,7 +222,7 @@ def gen_log_finish(pipeline_name):
                 'target': node.name,
             })
 
-            monad_log_list[edge_id] = _read_monad_logs(
+            monad_read_list[edge_id] = _read_monad_logs(
                 df_val_types=df_val_types,
                 type='read',
                 datanode_detail=datanode_detail,
@@ -242,7 +243,7 @@ def gen_log_finish(pipeline_name):
                 'target': dataset_name,
             })
 
-            monad_log_list[edge_id] = _read_monad_logs(
+            monad_write_list[edge_id] = _read_monad_logs(
                 df_val_types=df_val_types,
                 type='write',
                 datanode_detail=datanode_detail,
@@ -258,7 +259,9 @@ def gen_log_finish(pipeline_name):
         "functions": functions_detail,
         "input_edges": input_edges,
         "output_edges": output_edges,
-        "monad_log": monad_log_list,
+        # "monad_log": monad_log_list,
+        "monad_log_read": monad_read_list,
+        "monad_log_write": monad_write_list,
         "function_log": run_function_result['function_result'],
     }
     
@@ -420,9 +423,14 @@ def _read_monad_logs(
         
         log_filename = f'{folder_id}_{file_name}_{type}.parquet'
         log_path = os.path.join(validation_log_dir, log_filename)
-        all_record_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_{type}_all_record.json')
+        data_statistic_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_data_statistic.json')
                 
         log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
+        
+        with open(data_statistic_path) as data_file:
+            data_statistic = json.load(data_file)['all_record']
+            
+        completeness_percent = 1 - ( data_statistic['all_null_value'] / (data_statistic['all_record'] * data_statistic['all_column']) )
 
         if os.path.exists(log_path):
             ddf_log = dd.read_parquet(log_path)
@@ -432,10 +440,18 @@ def _read_monad_logs(
             df_type_count = ddf_merge.groupby(['rule_type'])['pk'].nunique().compute()
             count_format = df_type_count['format'] if 'format' in df_type_count else 0
             count_consistency = df_type_count['consistency'] if 'consistency' in df_type_count else 0
-            count_completeness = df_type_count['completeness'] if 'completeness' in df_type_count  else 0
+            count_completeness = df_type_count['completeness'] if 'completeness' in df_type_count  else 0 # count from null error logs
             
-            with open(all_record_path) as data_file:
-                all_record = json.load(data_file)['all_record']
+            number_error = (ddf_merge['is_required'] == True).sum() > 0
+            number_warning = (ddf_merge['is_required'] == False).sum() > 0
+            if number_error > 0:
+                status = 'fail'
+            elif number_warning > 0:
+                status = 'warning'
+            else:
+                status = 'success'
+            # with open(all_record_path) as data_file:
+            #     all_record = json.load(data_file)['all_record']
             
             res = datanode.writeListDataNode(df=ddf_merge, directory_id=log_folder_id, name=log_filename, replace=True)
             listdatanode_file_id = res['file_id']
@@ -451,9 +467,25 @@ def _read_monad_logs(
                 'n_error_format': int(count_format),
                 'n_error_consistency': int(count_consistency),
                 'n_error_completeness': int(count_completeness),
-                'all_record': all_record,
+                'completeness_percent': completeness_percent,
+                'all_record': data_statistic['all_record'],
                 'logs_file_id': log_file_id,
+                'status': status,
             }
             
         else:
-            return None        
+            # return None
+            return {
+                'file_id': datanode_detail[dataset_name]['file_id'],
+                'name': dataset_name,
+                'type': type,
+                'data_type': 'Parquet',
+                'run_datetime': start_run_all,
+                'n_error_format': 0,
+                'n_error_consistency': 0,
+                'n_error_completeness': 0,
+                'completeness_percent': completeness_percent,
+                'all_record': data_statistic['all_record'], # mock number
+                'logs_file_id': None,
+                'status': 'success',
+            }        

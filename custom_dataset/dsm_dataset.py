@@ -155,15 +155,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     def _validate_data(self, ddf, type):
         folder_path = 'logs/validation_logs/'
         save_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}.parquet')
-        all_record_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}_all_record.json')
+        # all_record_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_{type}_all_record.json')
         if not os.path.exists(folder_path):
             os.makedirs(folder_path, exist_ok=True)
 
         if os.path.exists(save_path):
             os.remove(save_path) # clear previous validation logs
 
-        if os.path.exists(all_record_path):
-            os.remove(all_record_path) # clear previous validation logs
+        # if os.path.exists(all_record_path):
+        #     os.remove(all_record_path) # clear previous validation logs
 
 
         if self._schema:   
@@ -178,9 +178,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 ddf.shape[0]
             )
 
-            all_record = { 'all_record': n_original_row}
-            with open(all_record_path, 'w') as f:
-                json.dump(all_record, f)
+            # all_null_value = ddf.isna().sum().compute()
+            # all_column = ddf.columns.shape[0]
+            # all_record = { 
+            #     'all_record': n_original_row, 
+            #     'all_null_value': all_null_value,
+            #     'all_column': all_column,
+            # }
+            # with open(all_record_path, 'w') as f:
+            #     json.dump(all_record, f)
 
             if df_critical_error.shape[0] > 0:
                 columns = df_critical_error.columns
@@ -198,14 +204,28 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 ddf = ddf[~ddf[self._schema['pk_column']].isin(pk_remove_list)]
 
         return ddf
-
-    def _validate_and_save_data(self, ddf, type):
-        pass
-        # if self._schema:
             
-            
-        # else:
-            # no validate
+    def _write_statistic_log(self):
+        # save data_statistic_path
+        folder_path = 'logs/validation_logs/'
+        data_statistic_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_data_statistic.json')
+        
+        if os.path.exists(data_statistic_path):
+            os.remove(data_statistic_path) # clear previous validation logs
+        
+        logger.info('      3. calculate file statistics    ')
+        data_statistic = ddf_read.shape[0].compute()
+        all_null_value = ddf.isna().sum().sum().compute()
+        all_column = ddf.columns.shape[0]
+        
+        # import pdb; pdb.set_trace()
+        data_statistic = { 
+            'all_record': data_statistic, 
+            'all_null_value': all_null_value,
+            'all_column': all_column,
+        }
+        with open(data_statistic_path, 'w') as f:
+            json.dump(data_statistic, f) 
 
     
         
@@ -241,20 +261,51 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         file_id = None
 
         with ProgressBar():
+            ## save data local
+            logger.info('----- Save Data and Information ------')
+            logger.info('      1. Write Temp File:     ')
+            save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}.parquet'
+            ddf.to_parquet(save_file_name)
+            
+            logger.info('      2. Read Temp File:     ')
+            ddf_read = dd.read_parquet(save_file_name)
+            
+            
+            # # save data_statistic_path
+            # folder_path = 'logs/validation_logs/'
+            # data_statistic_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_data_statistic.json')
+            
+            # if os.path.exists(data_statistic_path):
+            #     os.remove(data_statistic_path) # clear previous validation logs
+            
+            # logger.info('      3. calculate file statistics    ')
+            # data_statistic = ddf_read.shape[0].compute()
+            # all_null_value = ddf.isna().sum().sum().compute()
+            # all_column = ddf.columns.shape[0]
+            
+            # # import pdb; pdb.set_trace()
+            # data_statistic = { 
+            #     'all_record': data_statistic, 
+            #     'all_null_value': all_null_value,
+            #     'all_column': all_column,
+            # }
+            # with open(data_statistic_path, 'w') as f:
+            #     json.dump(data_statistic, f)
+            
             if self._schema:
                 ## save data local
                 logger.info('----- Do Validation ------')
-                logger.info('      1. Write Temp File:     ')
-                save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}.parquet'
-                ddf.to_parquet(save_file_name)
+                # logger.info('      1. Write Temp File:     ')
+                # save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}.parquet'
+                # ddf.to_parquet(save_file_name)
                 
-                logger.info('      2. Read Temp File:     ')
-                ddf_read = dd.read_parquet(save_file_name)
+                # logger.info('      2. Read Temp File:     ')
+                # ddf_read = dd.read_parquet(save_file_name)
                 
-                logger.info('      3. Writing Validation:     ')
+                logger.info('      1. Writing Validation:     ')
                 ddf_read = self._validate_data(ddf_read, type='write')
                 
-                logger.info('      4. Write DataNode:     ')
+                logger.info('      2. Write DataNode:     ')
                 data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
                 
                 time.sleep(2) # wait for file finish writing
@@ -267,7 +318,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 
             else:
                 # no validate, save data directly to data platform
-                data_node.write(df=ddf, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+                data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
 
 
     def _describe(self) -> Dict[str, Any]:
