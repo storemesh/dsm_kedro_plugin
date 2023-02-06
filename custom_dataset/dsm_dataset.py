@@ -17,13 +17,11 @@ import json
 from datetime import date
 import datetime
 import time
+import requests
+import logging
 
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE
-
-import time
-
-import logging
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -205,27 +203,49 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
         return ddf
             
-    def _write_statistic_log(self):
+    def _write_statistic_log(self, ddf, file_id):
         # save data_statistic_path
-        folder_path = 'logs/validation_logs/'
-        data_statistic_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_data_statistic.json')
+        # folder_path = 'logs/validation_logs/'
+        # data_statistic_path = os.path.join(folder_path, f'{self._folder_id}_{self._file_name}_data_statistic.json')
         
-        if os.path.exists(data_statistic_path):
-            os.remove(data_statistic_path) # clear previous validation logs
+        # if os.path.exists(data_statistic_path):
+        #     os.remove(data_statistic_path) # clear previous validation logs
         
         logger.info('      3. calculate file statistics    ')
-        data_statistic = ddf_read.shape[0].compute()
+        all_record = ddf.shape[0].compute()
         all_null_value = ddf.isna().sum().sum().compute()
         all_column = ddf.columns.shape[0]
         
         # import pdb; pdb.set_trace()
         data_statistic = { 
-            'all_record': data_statistic, 
-            'all_null_value': all_null_value,
+            'all_record': all_record, 
+            'all_null_value': int(all_null_value),
             'all_column': all_column,
         }
-        with open(data_statistic_path, 'w') as f:
-            json.dump(data_statistic, f) 
+        
+        base_url = os.path.join(DATAPLATFORM_API_URI, 'api')
+        
+        headers = {'Authorization': f'Bearer {self._token}'}
+        _res = requests.get(f'{base_url}/v2/file/{file_id}/',  headers=headers)
+        meta = _res.json()
+        context_meta = meta.get('context', {}) #.get('statistics', {})
+        context_meta.update({
+            'statistics': data_statistic
+        })
+        
+        # import pdb;pdb.set_trace()
+        _res = requests.patch(
+            f'{base_url}/v2/file/{file_id}/',  
+            headers=headers,
+            json={
+                'context': context_meta
+            }
+        )
+        
+        return _res
+        
+        # with open(data_statistic_path, 'w') as f:
+        #     json.dump(data_statistic, f) 
 
     
         
@@ -270,6 +290,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             logger.info('      2. Read Temp File:     ')
             ddf_read = dd.read_parquet(save_file_name)
             
+            # self._write_statistic_log(ddf_read)
             
             # # save data_statistic_path
             # folder_path = 'logs/validation_logs/'
@@ -306,7 +327,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 ddf_read = self._validate_data(ddf_read, type='write')
                 
                 logger.info('      2. Write DataNode:     ')
-                data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+                res_meta = data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
                 
                 time.sleep(2) # wait for file finish writing
                 
@@ -318,7 +339,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 
             else:
                 # no validate, save data directly to data platform
-                data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+                res_meta = data_node.write(df=ddf_read, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+            
+            self._write_statistic_log(ddf_read, res_meta['file_id'])
+            
 
 
     def _describe(self) -> Dict[str, Any]:
@@ -360,8 +384,11 @@ class DsmListDataNode(DsmDataNode):
         data_node = self._get_data_node()
         file_id = None
         with ProgressBar():
-            data_node.writeListDataNode(df=ddf, directory_id=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
-    
+            res_meta = data_node.writeListDataNode(df=ddf, directory_id=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+            write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[0]['file_id']
+            ddf_read = data_node.read_ddf(file_id=write_file_id)            
+            time.sleep(2) # wait for file finish writing
+            self._write_statistic_log(ddf_read, write_file_id)
     
 
 

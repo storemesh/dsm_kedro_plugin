@@ -230,6 +230,7 @@ def gen_log_finish(pipeline_name):
                 start_run_all=start_data['start_time'],
                 validation_log_dir=validation_log_dir,
                 datanode=datanode,
+                headers=headers,
             )
         
         ## output_edges & monad output
@@ -250,7 +251,8 @@ def gen_log_finish(pipeline_name):
                 dataset_name=dataset_name,
                 start_run_all=start_data['start_time'],
                 validation_log_dir=validation_log_dir,
-                datanode=datanode
+                datanode=datanode,
+                headers=headers,
             )
             
     output_dict = {
@@ -413,6 +415,7 @@ def _read_monad_logs(
         start_run_all,
         validation_log_dir,
         datanode,
+        headers,
     ):
         if datanode_detail[dataset_name]['meta']['file_name'] == None:
             return None
@@ -423,14 +426,33 @@ def _read_monad_logs(
         
         log_filename = f'{folder_id}_{file_name}_{type}.parquet'
         log_path = os.path.join(validation_log_dir, log_filename)
-        data_statistic_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_data_statistic.json')
+        # data_statistic_path = os.path.join(validation_log_dir, f'{folder_id}_{file_name}_data_statistic.json')
                 
         log_folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name="Logs")
         
-        with open(data_statistic_path) as data_file:
-            data_statistic = json.load(data_file)['all_record']
+        # with open(data_statistic_path) as data_file:
+        #     data_statistic = json.load(data_file)['all_record']
+
+        #  
+        _res = requests.get(f'{file_meta_url}/{file_id}/',  headers=headers)
+        meta = _res.json()
+        
+        if meta['type']['name'] == 'listDataNode':
+            write_file_id = datanode.get_file_version(file_id=file_id)[0]['file_id'] 
+            _res = requests.get(f'{file_meta_url}/{write_file_id}/',  headers=headers)
+            meta = _res.json()
             
-        completeness_percent = 1 - ( data_statistic['all_null_value'] / (data_statistic['all_record'] * data_statistic['all_column']) )
+        data_statistic = meta.get('context', {}).get('statistics', None)
+        
+        if data_statistic == None:
+            raise Exception(f'file id: {file_id} does not have "statistics" in metadata context')
+        
+        # import pdb; pdb.set_trace()
+        divider = data_statistic['all_record'] * data_statistic['all_column']
+        if divider == 0: 
+            completeness_percent = 1 
+        else:
+            completeness_percent = 1 - data_statistic['all_null_value'] / divider
 
         if os.path.exists(log_path):
             ddf_log = dd.read_parquet(log_path)
@@ -442,8 +464,8 @@ def _read_monad_logs(
             count_consistency = df_type_count['consistency'] if 'consistency' in df_type_count else 0
             count_completeness = df_type_count['completeness'] if 'completeness' in df_type_count  else 0 # count from null error logs
             
-            number_error = (ddf_merge['is_required'] == True).sum() > 0
-            number_warning = (ddf_merge['is_required'] == False).sum() > 0
+            number_error = (ddf_merge['is_required'] == True).sum().compute() > 0
+            number_warning = (ddf_merge['is_required'] == False).sum().compute() > 0
             if number_error > 0:
                 status = 'fail'
             elif number_warning > 0:
