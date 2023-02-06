@@ -9,7 +9,9 @@
   folder_id: {{ node.folder_id }}
   file_name: {{ node.landing_file_name }}
   credentials: dsmlibrary
-
+  config: 
+      load_only_updated: {{ node.load_only_updated }}
+      
 {% endfor %}
 
 

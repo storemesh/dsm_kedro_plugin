@@ -112,7 +112,8 @@ def generate_landing_pipeline(
         token, 
         write_mode=True,
         overwrite_exist_node=False,
-        generate_source_dict=None
+        generate_source_dict=None,
+        load_only_updated=False,
     ):
     if write_mode:
 
@@ -171,7 +172,8 @@ def generate_landing_pipeline(
                 'landing_catalog_name': landing_catalog_name,
                 'landing_file_name': landing_file_name,
                 'folder_id': landing_folder_id,
-                'database_name': database_name,               
+                'database_name': database_name,     
+                'load_only_updated': load_only_updated,          
             }
             node_list.append(data)
 

@@ -16,6 +16,7 @@ WRITE_MODE = True
 
 sql_datanode_folder_name = "Landing"
 landing_folder_name = "Landing"
+load_only_updated = False
 
 if __name__ == "__main__":
     if not os.path.exists(QUERY_LANDING_PIPELINE_PATH):
@@ -31,5 +32,6 @@ if __name__ == "__main__":
         token=token, 
         write_mode=WRITE_MODE,
         overwrite_exist_node=overwrite_exist_node,
+        load_only_updated=load_only_updated,
     )
     print('\ngenerate landing is successful!!')
