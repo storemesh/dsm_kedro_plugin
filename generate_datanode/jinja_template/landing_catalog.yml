@@ -6,8 +6,8 @@
 {% for node in node_list -%}
 {{ node.landing_catalog_name }}:
   type: dsm_kedro_plugin.custom_dataset.dsm_dataset.DsmListDataNode
-  folder_id: {{ node.folder_id }}
   project_folder_name: Landing
+  file_name: {{ node.landing_file_name }}
   credentials: dsmlibrary
   config: 
       load_only_updated: {{ node.load_only_updated }}

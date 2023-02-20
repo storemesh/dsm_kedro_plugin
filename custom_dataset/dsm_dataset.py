@@ -19,6 +19,8 @@ import datetime
 import time
 import requests
 import logging
+from multiprocessing.pool import ThreadPool
+import dask
 
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE
@@ -327,7 +329,8 @@ class DsmListDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
         data_node = self._get_data_node()
         file_extension = self._get_file_extension()
-        file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=self._folder_id)
+        folder_id = self._get_folder_id(data_node)
+        file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
         
         load_only_updated = self._config.get('load_only_updated', False)
         if load_only_updated:
@@ -344,13 +347,18 @@ class DsmListDataNode(DsmDataNode):
         lineage_list = [ item['file_id'] for item in meta_list]
 
         data_node = self._get_data_node()
-        file_id = None
+        folder_id = self._get_folder_id(data_node)
+
         with ProgressBar():
-            res_meta = data_node.writeListDataNode(df=ddf, directory_id=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+            print(f'number of partitions: {ddf.npartitions}')
+            logger.info('      1. Write File:     ')
+            res_meta = data_node.writeListDataNode(df=ddf, directory_id=folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+            logger.info('      2. Read File:     ')
             write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[0]['file_id']
             ddf_read = data_node.read_ddf(file_id=write_file_id)            
             time.sleep(2) # wait for file finish writing
             before_validate_stat = self.calculate_statistic_log(ddf_read)
+            logger.info('      3. Write Logs:     ')
             self._write_statistic_log(
                 before_validate_stat=before_validate_stat, 
                 after_validate_stat=before_validate_stat, 
@@ -403,13 +411,11 @@ class DsmSQLDataNode(DsmDataNode):
     def _load(self) -> Tuple[dd.DataFrame, int]:
         
         data_node = self._get_data_node()
-        if self._file_id:
-            file_id = self._file_id
-        else:            
-            file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=self._folder_id)
-            
-        ddf = data_node.read_ddf(file_id=file_id)        
-            
+        folder_id = self._get_folder_id(data_node)
+        file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id)
+
+        dask.config.set(pool=ThreadPool(1))
+        ddf = data_node.read_ddf(file_id=file_id)       
         self.meta['file_id'] = file_id
         
         return (ddf, self.meta)
