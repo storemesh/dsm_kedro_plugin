@@ -468,7 +468,13 @@ def _read_monad_logs(
         before_validated_stat = meta.get('context', {}).get('statistics', {}).get('before_validate_stat', None)
         
         if before_validated_stat == None:
-            raise Exception(f'file id: {file_id} does not have "statistics.before_validate_stat" in metadata context, please rerun your pipeline with kedro')
+            print(f'Warnining!!, file id: {file_id} does not have "statistics.before_validate_stat" in metadata context, it will fill with 0 and 1 instead. Please rerun your pipeline with kedro to get correct number')
+            before_validated_stat = {
+                'all_record': 1,
+                'all_column': 1,
+                'all_null_value': 0,
+            }
+            # raise Exception(f'file id: {file_id} does not have "statistics.before_validate_stat" in metadata context, please rerun your pipeline with kedro')
         
         divider = before_validated_stat['all_record'] * before_validated_stat['all_column']
         if divider == 0: 
