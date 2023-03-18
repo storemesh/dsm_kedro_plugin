@@ -318,8 +318,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
         
-        return self.meta
-    
+        return self.meta    
 
     
 class DsmListDataNode(DsmDataNode):        
@@ -336,7 +335,7 @@ class DsmListDataNode(DsmDataNode):
         if load_only_updated:
             ddf = data_node.get_update_data(file_id=file_id)    
         else:
-            write_file_id = data_node.get_file_version(file_id=file_id)[0]['file_id']
+            write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
             ddf = data_node.read_ddf(file_id=write_file_id) 
         self.meta['file_id'] = file_id
         
@@ -354,7 +353,7 @@ class DsmListDataNode(DsmDataNode):
             logger.info('      1. Write File:     ')
             res_meta = data_node.writeListDataNode(df=ddf, directory_id=folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
             logger.info('      2. Read File:     ')
-            write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[0]['file_id']
+            write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[-1]['file_id']
             ddf_read = data_node.read_ddf(file_id=write_file_id)            
             time.sleep(2) # wait for file finish writing
             before_validate_stat = self.calculate_statistic_log(ddf_read)
