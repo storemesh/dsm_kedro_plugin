@@ -90,3 +90,29 @@ if your update your docstring in your source code, you can just rerun `make html
 - tutorial https://www.youtube.com/watch?v=b4iFyrLQQh4   
 - you can install sphinx in pip instead of apt install, it's also work
 - you can copy config.py in here https://towardsdatascience.com/documenting-python-code-with-sphinx-554e1d6c4f6d 
+
+
+
+
+## Validate Integration file with Data Product
+
+
+'''
+
+ผมทำโค้ดเอาไว้เช็ค sheet data product กับ integration ไฟล์นะครับ ว่าคอลัมน์ไหนขาด, เกินหรือ data type ไม่ตรงบ้าง จะได้เช็คได้ง่ายๆครับว่าข้อมูลอันไหนยังไม่เรียบร้อย
+
+โค้ดอยู่ใน dsm_kedro_plugin commit ล่าสุดนะครับ โปรเจคจะใช้ลองไป pull ลงมาได้
+
+เงื่อนไขการใช้
+1. catalog ของ integration ต้องอยู่ในไฟล์ conf/base/catalogs/manual/integration.yml ทั้งหมด
+2. ต้องมีไฟล์ conf/local/service_account.json เพื่อให้ดึง google sheet ได้ (วิธี gen credential https://www.youtube.com/watch?v=bu5wXjz2KvU)
+
+วิธีรัน
+```sh
+python src/dsm_kedro_plugin/check_data_product.py -gsheet_fname <ชื่อไฟล์ google sheet>
+
+# ตัวอย่าง
+# python src/dsm_kedro_plugin/check_data_product.py -gsheet_fname "DITP65_Integration Database Model"
+```
+
+report อยู่ที่ logs/check_data_product.log
