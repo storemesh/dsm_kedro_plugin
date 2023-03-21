@@ -318,8 +318,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
         
-        return self.meta
-    
+        return self.meta    
 
     
 class DsmListDataNode(DsmDataNode):        
@@ -336,7 +335,7 @@ class DsmListDataNode(DsmDataNode):
         if load_only_updated:
             ddf = data_node.get_update_data(file_id=file_id)    
         else:
-            write_file_id = data_node.get_file_version(file_id=file_id)[0]['file_id']
+            write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
             ddf = data_node.read_ddf(file_id=write_file_id) 
         self.meta['file_id'] = file_id
         
@@ -354,7 +353,7 @@ class DsmListDataNode(DsmDataNode):
             logger.info('      1. Write File:     ')
             res_meta = data_node.writeListDataNode(df=ddf, directory_id=folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
             logger.info('      2. Read File:     ')
-            write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[0]['file_id']
+            write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[-1]['file_id']
             ddf_read = data_node.read_ddf(file_id=write_file_id)            
             time.sleep(2) # wait for file finish writing
             before_validate_stat = self.calculate_statistic_log(ddf_read)
@@ -469,10 +468,12 @@ class DsmReadCSVNode(DsmDataNode):
         ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
         
-        save_path = os.path.join('./data/01_raw/', self._file_name, '.csv')
-        ddf.to_csv(save_path, index=False)
-        data_node = self._get_data_node()    
-        data_node.upload_file(directory_id=self._folder_id, file_path=save_path, description="", lineage=lineage_list)
+        save_path = os.path.join('./data/01_raw/', self._file_name)
+        ddf.to_csv(save_path, index=False, single_file=True)
+        data_node = self._get_data_node()
+        _folder_id = self._get_folder_id(data_node)
+        _replace = self._config.get('replace', False)
+        data_node.upload_file(directory_id=_folder_id, file_path=save_path, description="", lineage=lineage_list, replace=_replace)
 
     def _describe(self) -> Dict[str, Any]:
         pass
