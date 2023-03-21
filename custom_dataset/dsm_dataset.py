@@ -468,10 +468,12 @@ class DsmReadCSVNode(DsmDataNode):
         ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
         
-        save_path = os.path.join('./data/01_raw/', self._file_name, '.csv')
-        ddf.to_csv(save_path, index=False)
-        data_node = self._get_data_node()    
-        data_node.upload_file(directory_id=self._folder_id, file_path=save_path, description="", lineage=lineage_list)
+        save_path = os.path.join('./data/01_raw/', self._file_name)
+        ddf.to_csv(save_path, index=False, single_file=True)
+        data_node = self._get_data_node()
+        _folder_id = self._get_folder_id(data_node)
+        _replace = self._config.get('replace', False)
+        data_node.upload_file(directory_id=_folder_id, file_path=save_path, description="", lineage=lineage_list, replace=_replace)
 
     def _describe(self) -> Dict[str, Any]:
         pass
