@@ -123,7 +123,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         folder_id = self._get_folder_id(data_node) 
         file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
         
-        ddf = data_node.read_ddf(file_id=file_id)
+        ddf = data_node.read_ddf(file_id=file_id, extra_param=self._extra_param)
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
         
