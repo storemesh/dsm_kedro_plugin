@@ -21,6 +21,7 @@ import requests
 import logging
 from multiprocessing.pool import ThreadPool
 import dask
+import shutil
 
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE
@@ -267,6 +268,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             logger.info('----- Save data and information before validate------')
             logger.info('      1. Write Temp File:     ')
             save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}.parquet'
+            if os.path.exists(save_file_name) and os.path.isdir(save_file_name): shutil.rmtree(save_file_name)
             ddf.to_parquet(save_file_name)
             
             logger.info('      2. Read Temp File:     ')
