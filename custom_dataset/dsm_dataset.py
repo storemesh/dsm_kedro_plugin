@@ -101,7 +101,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             A new ``DsmDataNode`` object.
         """
     
-        self._token = credentials['token']
+        self._token = credentials.get('token', None)
+        self._apikey = credentials.get('apikey', None)
         self._file_id = None
         self._folder_id = folder_id
         self._project_folder_name = project_folder_name
@@ -128,10 +129,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
         
-        return (ddf, self.meta)
-        
-        
-        return (ddf, self.meta)       
+        return (ddf, self.meta)     
 
     def _validate_input(self):
         if (self._folder_id == None) and (self._project_folder_name == None):
@@ -148,7 +146,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
 
     def _get_data_node(self):
         data_node = DataNode(
-            self._token, 
+            token=self._token,
+            apikey=self._apikey,
             dataplatform_api_uri=DATAPLATFORM_API_URI,
             object_storage_uri=OBJECT_STORAGE_URI,
             object_storage_secue=OBJECT_STORAGE_SECUE,
@@ -210,7 +209,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     def _write_statistic_log(self, before_validate_stat, after_validate_stat, file_id):        
         base_url = os.path.join(DATAPLATFORM_API_URI, 'api')
         
-        headers = {'Authorization': f'Bearer {self._token}'}
+        headers = {'Authorization': f'Bearer {self._token}'} if self._apikey == None else {'Authorization': f'Api-Key {self._apikey}'}
         _res = requests.get(f'{base_url}/v2/file/{file_id}/',  headers=headers)
         meta = _res.json()
         context_meta = meta.get('context', {}) #.get('statistics', {})
