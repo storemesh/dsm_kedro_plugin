@@ -469,7 +469,7 @@ class DsmReadCSVNode(DsmDataNode):
         ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
         
-        save_path = os.path.join('./data/01_raw/', self._file_name)
+        save_path = os.path.join('./data/01_raw/', f"{self._file_name}.csv")
         ddf.to_csv(save_path, index=False, single_file=True)
         data_node = self._get_data_node()
         _folder_id = self._get_folder_id(data_node)
