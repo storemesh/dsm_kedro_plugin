@@ -99,6 +99,8 @@ for sheet in wks_list:
     new_header = df_dp.iloc[0]
     df_dp = df_dp[1:]
     df_dp.columns = new_header
+    
+    is_error = False
 
     try:
         ddf, meta = catalog.load(integration_name)
@@ -110,6 +112,8 @@ for sheet in wks_list:
             rootLogger.info("\n    There are some columns that doesn't match between data product and integration file")
             rootLogger.info(alert_text_diff)
             rootLogger.info('\n')
+            is_error = True
+            
         rootLogger.info(f"    Data Product Columns Mismatch:")
         for index, row in df_dp.iterrows():
             dp_column = row['Column Name']
@@ -117,19 +121,27 @@ for sheet in wks_list:
 
             if dp_column not in inte_columns:
                 rootLogger.info(f"       '{dp_column}': not exist in Integration File")
+                is_error = True
                 continue
 
             if dp_dtype == None:
                 rootLogger.info(f"       '{dp_column}': data type is not define in Data Product or it's not exist in map dict")
+                is_error = True
                 continue
 
             inte_dtype = str(ddf[dp_column].dtype)
             if inte_dtype not in dp_dtype:
                 rootLogger.info(f'''       '{dp_column}': Data type is not same.   Data Product: '{row['Data Type']}'({dp_dtype})     Integration File: '{inte_dtype}' ''')
+                is_error = True
 
 
     except Exception as e:
         rootLogger.info(f'         ****Exception*** : {e}')
     
+    
+if is_error:
+    with open("logs/check_data_product.log", "r") as f:
+        file_data = f.read()
+        raise Exception('There are some consistent in data product and integration. Please check logs/check_data_product.log for more detail or see detail below \n' + file_data)
     
         
