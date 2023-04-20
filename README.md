@@ -96,9 +96,6 @@ if your update your docstring in your source code, you can just rerun `make html
 
 ## Validate Integration file with Data Product
 
-
-'''
-
 ผมทำโค้ดเอาไว้เช็ค sheet data product กับ integration ไฟล์นะครับ ว่าคอลัมน์ไหนขาด, เกินหรือ data type ไม่ตรงบ้าง จะได้เช็คได้ง่ายๆครับว่าข้อมูลอันไหนยังไม่เรียบร้อย
 
 โค้ดอยู่ใน dsm_kedro_plugin commit ล่าสุดนะครับ โปรเจคจะใช้ลองไป pull ลงมาได้

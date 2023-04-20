@@ -133,8 +133,8 @@ def get_token():
     credential_path = os.path.join(KEDRO_PROJECT_BASE, "conf/local/credentials.yml")
     with open(credential_path) as f:
         credentials = yaml.safe_load(f)
-        token = credentials['dsmlibrary']['token']
-        return token
+        credential_dict = credentials['dsmlibrary']
+        return credential_dict
 
 
 def write_dummy_file(file_name, directory_id, data_node):

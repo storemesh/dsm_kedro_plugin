@@ -29,22 +29,29 @@ def get_table_display_name(table_name):
     
     
     
-def generate_sql_datanode(source_table, project_folder_id, sql_datanode_folder_name, token, write_mode=False):
+def generate_sql_datanode(
+    source_table, 
+    project_folder_id, 
+    sql_datanode_folder_name, 
+    credentials, 
+    write_mode=False
+):
     if write_mode:
         with open(SQL_DATANODE_CATALOG_PATH, 'w') as f:
             f.write('')
 
     database = DatabaseManagement(
-        token=token,
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
         object_storage_secue= OBJECT_STORAGE_SECUE,
+        **credentials,
     )
     data_node = DataNode(
         token, 
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
         object_storage_secue= OBJECT_STORAGE_SECUE,
+        **credentials,
     )
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
     
@@ -109,7 +116,7 @@ def generate_landing_pipeline(
         sql_datanode_folder_name, 
         landing_folder_name, 
         query_landing_pipeline_path, 
-        token, 
+        credentials, 
         write_mode=True,
         overwrite_exist_node=False,
         generate_source_dict=None,
@@ -135,16 +142,16 @@ def generate_landing_pipeline(
 
     node_list = []
     database = DatabaseManagement(
-        token=token,
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
         object_storage_secue=OBJECT_STORAGE_SECUE,
+        **credentials,
     )
     data_node = DataNode(
-        token, 
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
         object_storage_secue=OBJECT_STORAGE_SECUE,
+        **credentials,
     )
 
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
@@ -192,7 +199,7 @@ def generate_integration_catalogs(
     integration_table, 
     project_folder_id,
     integration_folder_name, 
-    token, 
+    credentials, 
     append=False
 ):  
     with open(INTEGRATION_CATALOG_PATH, 'w') as f:
@@ -200,10 +207,10 @@ def generate_integration_catalogs(
 
     node_list = []
     data_node = DataNode(
-        token, 
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
         object_storage_secue=OBJECT_STORAGE_SECUE,
+        **credentials,
     )
     integration_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=integration_folder_name)
     

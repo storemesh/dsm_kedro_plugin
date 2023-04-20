@@ -367,12 +367,12 @@ def get_pipeline_name(pipeline):
     return pipeline_name
 
 def get_dsm_datanode():
-    token = get_token()
+    credentials = get_token()
     datanode = DataNode(
-        token,
         dataplatform_api_uri=DATAPLATFORM_API_URI,
         object_storage_uri=OBJECT_STORAGE_URI,
         object_storage_secue=OBJECT_STORAGE_SECUE,
+        **credentials,
     )
 
     return datanode, token

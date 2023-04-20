@@ -8,7 +8,7 @@ from src.dsm_kedro_plugin.generate_datanode.utils.generate_catalog import genera
 from src.config.config_integration_table import integration_table
 from src.config.project_setting import PROJECT_FOLDER_ID
 
-token = get_token()
+credentials = get_token()
 
 WRITE_MODE = True
 APPEND_MODE = False
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         integration_table=integration_table, 
         project_folder_id=PROJECT_FOLDER_ID, 
         integration_folder_name=integration_folder_name, 
-        token=token, 
-        append=APPEND_MODE
+        append=APPEND_MODE,
+        credentials=credentials,
     )
     print('\ngenerate integration is successful!!')

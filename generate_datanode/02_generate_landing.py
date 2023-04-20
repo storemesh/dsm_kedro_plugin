@@ -10,7 +10,7 @@ from src.config.config_source_table import source_table
 from src.config.project_setting import PROJECT_FOLDER_ID
 
 
-token = get_token()
+credentials = get_token()
 
 WRITE_MODE = True
 
@@ -29,9 +29,9 @@ if __name__ == "__main__":
         sql_datanode_folder_name=sql_datanode_folder_name,
         landing_folder_name=landing_folder_name,
         query_landing_pipeline_path=QUERY_LANDING_PIPELINE_PATH, 
-        token=token, 
         write_mode=WRITE_MODE,
         overwrite_exist_node=overwrite_exist_node,
         load_only_updated=load_only_updated,
+        credentials=credentials,
     )
     print('\ngenerate landing is successful!!')

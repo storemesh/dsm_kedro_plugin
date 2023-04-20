@@ -10,7 +10,7 @@ from src.config.config_source_table import source_table
 from src.config.project_setting import PROJECT_FOLDER_ID
 
 
-token = get_token()
+credentials = get_token()
 
 WRITE_MODE = True
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
         source_table=source_table, 
         project_folder_id=PROJECT_FOLDER_ID, 
         sql_datanode_folder_name=sql_datanode_folder_name, 
-        token=token, 
-        write_mode=WRITE_MODE
+        write_mode=WRITE_MODE,
+        credentials=credentials,
     )
     print('\ngenerate sql datanode is successful!!')
