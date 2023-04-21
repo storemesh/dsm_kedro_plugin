@@ -1,7 +1,7 @@
 from re import sub
 from sqlalchemy.sql.sqltypes import Integer, Unicode, DateTime, Float, String, BigInteger, Numeric, Boolean, NCHAR, TIMESTAMP, Date, Text, DECIMAL, SmallInteger, CHAR, Enum
 from sqlalchemy.dialects.mssql.base import MONEY as mysql_MONEY
-from sqlalchemy.dialects.mysql.types import INTEGER as mysql_INTEGER, VARCHAR as mysql_VARCHAR, TINYINT as mysql_TINYINT, TEXT as mysql_TEXT
+from sqlalchemy.dialects.mysql.types import INTEGER as mysql_INTEGER, VARCHAR as mysql_VARCHAR, TINYINT as mysql_TINYINT, TEXT as mysql_TEXT, BIGINT as mysql_BIGINT
 from sqlalchemy.dialects.mssql.base import TINYINT
 from sqlalchemy import sql
 import pandas as pd
@@ -47,6 +47,7 @@ map_dict = {
     mysql_TINYINT: 'Int32',
     mysql_MONEY: 'float',
     mysql_TEXT: 'string',
+    mysql_BIGINT: 'Int64',
 
 }
 
@@ -61,18 +62,19 @@ def get_numpy_schema(class_obj):
         if not property.startswith('_'):
             try:
                 if value.primary_key:
-                    pk_column = property
+                    pk_column = value.name #property
                 
                 class_dtype = type(value.type)
                 
                 if class_dtype not in map_dict:
-                    raise KeyError(f"The data type of column '{property}' is {class_dtype} that's not exist in 'map_dict' (use for auto generate schema). Please import and add it in dsm_kedro_plugin/generate_datanode/utils/utils.py")
-                
-                schema[property] = map_dict[class_dtype]
+                    raise KeyError(f"The data type of column '{value.name}' is {class_dtype} that's not exist in 'map_dict' (use for auto generate schema). Please import and add it in dsm_kedro_plugin/generate_datanode/utils/utils.py")
+                                
+                schema[value.name] = map_dict[class_dtype]
                 
             except AttributeError as e:
                 # not do anything yet for InstrumentedAttribute Warning
                 pass
+                
                 
     if not pk_column:
         raise Exception(f'table "{class_obj}" has no primary key')
