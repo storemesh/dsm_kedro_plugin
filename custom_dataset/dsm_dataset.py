@@ -83,6 +83,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         schema: Dict = None,
         config: Dict = {},      
         extra_param: Dict = {},
+        read_extra_param: Dict = {},
+        write_extra_param: Dict = {},
     ):
         """Initialize a ``DsmDataNode`` with parameter from data catalog.
 
@@ -109,6 +111,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         self._file_name = file_name
         self._schema = schema
         self._extra_param = extra_param  
+        self._read_extra_param = read_extra_param 
+        self._write_extra_param = write_extra_param 
         self._config = config         
         
         self.meta = {
@@ -125,7 +129,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         folder_id = self._get_folder_id(data_node) 
         file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
         
-        ddf = data_node.read_ddf(file_id=file_id, extra_param=self._extra_param)
+        ddf = data_node.read_ddf(file_id=file_id, extra_param=self._read_extra_param)
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
         
@@ -268,6 +272,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             logger.info('      1. Write Temp File:     ')
             save_file_name = f'data/03_primary/{self._folder_id}_{self._file_name}.parquet'
             if os.path.exists(save_file_name) and os.path.isdir(save_file_name): shutil.rmtree(save_file_name)
+            # import pdb; pdb.set_trace()
             ddf.to_parquet(save_file_name)
             
             logger.info('      2. Read Temp File:     ')
@@ -280,7 +285,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 ddf_validated = self._validate_data(ddf_tmp, type='write')                
                 
                 logger.info('      2. Write DataNode:     ')
-                res_meta = data_node.write(df=ddf_validated, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+                res_meta = data_node.write(df=ddf_validated, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list, **self._write_extra_param)
                                 
                 time.sleep(2) # wait for file finish writing
                 
@@ -294,7 +299,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 
             else:
                 # no validate, save data directly to data platform
-                res_meta = data_node.write(df=ddf_tmp, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
+                res_meta = data_node.write(df=ddf_tmp, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list, **self._write_extra_param)
                 after_validate_stat = before_validate_stat
                 ddf = ddf_tmp
                 
