@@ -454,7 +454,7 @@ class DsmReadExcelNode(DsmDataNode):
         folder_id = self._get_folder_id(data_node)
         file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id) 
         meta, file_obj = data_node.get_file(file_id=file_id)     
-        df = pd.read_excel(file_obj, **self._extra_param)
+        df = pd.read_excel(file_obj, **self._read_extra_param)
         ddf = dd.from_pandas(df, npartitions=1)
         
         self.meta['file_id'] = file_id
