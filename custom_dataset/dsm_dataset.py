@@ -420,7 +420,7 @@ class DsmSQLDataNode(DsmDataNode):
         file_id = data_node.get_file_id(name=f"{self._file_name}", directory_id=folder_id)
 
         dask.config.set(pool=ThreadPool(1))
-        ddf = data_node.read_ddf(file_id=file_id)       
+        ddf = data_node.read_ddf(file_id=file_id, extra_param=self._read_extra_param)       
         self.meta['file_id'] = file_id
         
         return (ddf, self.meta)
