@@ -24,7 +24,7 @@ import dask
 import shutil
 
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
-from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE
+from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE, ETL_MODE
 
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -262,6 +262,11 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
         
+        # check save mode (initial or append)
+        if ETL_MODE and (ETL_MODE['mode'] == 'append'): 
+            if (self._project_folder_name in ETL_MODE['append_folder']) and ('append' not in self._write_extra_param):               
+                self._write_extra_param['append'] = True            
+        
         data_node = self._get_data_node()
         self._folder_id = self._get_folder_id(data_node)
         file_id = None
@@ -285,7 +290,15 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 ddf_validated = self._validate_data(ddf_tmp, type='write')                
                 
                 logger.info('      2. Write DataNode:     ')
-                res_meta = data_node.write(df=ddf_validated, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list, **self._write_extra_param)
+                res_meta = data_node.write(
+                    df=ddf_validated, 
+                    directory=self._folder_id, 
+                    name=self._file_name, 
+                    profiling=True, 
+                    replace=True, 
+                    lineage=lineage_list, 
+                    **self._write_extra_param
+                )
                                 
                 time.sleep(2) # wait for file finish writing
                 
