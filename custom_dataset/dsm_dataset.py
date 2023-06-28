@@ -320,7 +320,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 before_validate_stat=before_validate_stat, 
                 after_validate_stat=after_validate_stat, 
                 file_id=res_meta['file_id']
-            )            
+            )  
+
+            # delete temp file
+            os.remove(save_file_name)          
 
 
     def _describe(self) -> Dict[str, Any]:
