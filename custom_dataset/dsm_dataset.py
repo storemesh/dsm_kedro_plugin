@@ -323,7 +323,10 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             )  
 
             # delete temp file
-            os.remove(save_file_name)          
+            if os.path.isdir(save_file_name): 
+                shutil.rmtree(save_file_name)
+            else:
+                os.remove(save_file_name)          
 
 
     def _describe(self) -> Dict[str, Any]:
