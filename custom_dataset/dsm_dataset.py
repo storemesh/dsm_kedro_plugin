@@ -127,11 +127,16 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     def _get_dask_dataframe(self, file_extension=None):        
         data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node) 
+
+        # load file by dask
         file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
-        
         ddf = data_node.read_ddf(file_id=file_id, extra_param=self._read_extra_param)
+        
+        # load metadata        
+        f_meta = data_node.get_meta_file(file_id=file_id)        
         self.meta['file_id'] = file_id
         self.meta['folder_id'] = folder_id
+        self.meta['meta_discovery'] = f_meta
         
         return (ddf, self.meta)     
 
@@ -362,7 +367,12 @@ class DsmListDataNode(DsmDataNode):
         else:
             write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
             ddf = data_node.read_ddf(file_id=write_file_id) 
+        
+        # load metadata        
+        f_meta = data_node.get_meta_file(file_id=file_id)     
+        
         self.meta['file_id'] = file_id
+        self.meta['meta_discovery'] = f_meta
         
         return (ddf, self.meta)
     
