@@ -403,7 +403,8 @@ class DsmListDataNode(DsmDataNode):
             ddf = data_node.get_update_data(file_id=file_id, data_date=data_date)    
         else:
             if data_date:
-                write_file_id = data_node.get_file_from_date(file_id=file_id, data_date=data_date)['file_id']
+                index, result_list = data_node.get_file_from_date(file_id=file_id, data_date=data_date)                                    
+                write_file_id = result_list[index]['file_id']
             else:
                 write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
                             
@@ -439,8 +440,7 @@ class DsmListDataNode(DsmDataNode):
                 profiling=True, 
                 replace=True, 
                 lineage=lineage_list,
-                overwrite_same_date=True,                
-                # data_date=data_date,
+                overwrite_same_date=True, 
             )
                         
             logger.info('      2. Read File:     ')            
