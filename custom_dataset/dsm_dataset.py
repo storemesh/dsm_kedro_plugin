@@ -7,6 +7,8 @@ sys.path.append(os.getcwd())
 
 from kedro.io import AbstractDataSet
 from kedro.extras.datasets.api.api_dataset import APIDataSet
+from kedro.framework.session import KedroSession
+from kedro.framework.startup import bootstrap_project
 import dask
 import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
@@ -22,16 +24,27 @@ import logging
 from multiprocessing.pool import ThreadPool
 import dask
 import shutil
+from pathlib import Path
 
+from .utils import validate_etl_date
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE, ETL_MODE
 
+# log setting
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logger = logging.getLogger('kedro')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)               
+
+# load kedro context
+project_path = Path.cwd()
+bootstrap_project(project_path)
+
+session = KedroSession.create(project_path)
+kedro_context = session.load_context()
+
 
 class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     """``DsmDataNode`` loads/saves data from/to Data Platform.
@@ -268,9 +281,19 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         lineage_list = [ item['file_id'] for item in meta_list]
         
         # check save mode (initial or append)
-        if ETL_MODE and (ETL_MODE['mode'] == 'append'): 
-            if (self._project_folder_name in ETL_MODE['append_folder']) and ('append' not in self._write_extra_param):               
-                self._write_extra_param['append'] = True            
+        if ETL_MODE:
+            etl_config = ETL_MODE['DsmDataNode']['write']
+            if etl_config['auto_partition'] and ('partition_on' not in self._write_extra_param):
+                # add new column for partitioning (only catalog that provide partition_on param in _write_extra_param)
+                etl_date = kedro_context.params.get('etl_date', None) #catalog.load('params:etl_date')
+                validate_etl_date(etl_date)
+                ddf['_retrieve_date'] = etl_date
+                self._write_extra_param['partition_on'] = '_retrieve_date'         
+                    
+            if (etl_config['mode'] == 'append') and \
+                (self._project_folder_name in etl_config['append_folder']) and \
+                 ('append' not in self._write_extra_param):
+                    self._write_extra_param['append'] = True 
         
         data_node = self._get_data_node()
         self._folder_id = self._get_folder_id(data_node)
@@ -362,10 +385,29 @@ class DsmListDataNode(DsmDataNode):
         file_id = data_node.get_file_id(name=f"{self._file_name}.{file_extension}", directory_id=folder_id)
         
         load_only_updated = self._config.get('load_only_updated', False)
+        data_date = None
+        
+        if ETL_MODE and ETL_MODE['DsmListDataNode']:
+            etl_config_read = ETL_MODE['DsmListDataNode']['read']
+            if etl_config_read['mode'] == 'from_date':
+                etl_date = kedro_context.params.get('etl_date', None)
+                data_date = validate_etl_date(etl_date)
+            
+            if (self._project_folder_name in etl_config_read['list_datanode_folder']) and \
+                etl_config_read['load_only_updated'] and \
+                ('load_only_updated' not in self._config):
+                load_only_updated = etl_config_read['load_only_updated']
+        
+        
         if load_only_updated:
-            ddf = data_node.get_update_data(file_id=file_id)    
+            ddf = data_node.get_update_data(file_id=file_id, data_date=data_date)    
         else:
-            write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
+            if data_date:
+                index, result_list = data_node.get_file_from_date(file_id=file_id, data_date=data_date)                                    
+                write_file_id = result_list[index]['file_id']
+            else:
+                write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
+                            
             ddf = data_node.read_ddf(file_id=write_file_id) 
         
         # load metadata        
@@ -382,13 +424,45 @@ class DsmListDataNode(DsmDataNode):
 
         data_node = self._get_data_node()
         folder_id = self._get_folder_id(data_node)
+        
+        overwrite_same_date = False
+        write_from_date = None
+        
+        if ETL_MODE and ETL_MODE['DsmListDataNode']:
+            etl_config_write = ETL_MODE['DsmListDataNode']['write']
+            overwrite_same_date = etl_config_write['overwrite_same_date']
+            
+            if etl_config_write['mode'] == 'from_date':
+                etl_date = kedro_context.params.get('etl_date', None)
+                data_date = validate_etl_date(etl_date)                        
 
         with ProgressBar():
             print(f'number of partitions: {ddf.npartitions}')
             logger.info('      1. Write File:     ')
-            res_meta = data_node.writeListDataNode(df=ddf, directory_id=folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list)
-            logger.info('      2. Read File:     ')
-            write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[-1]['file_id']
+            
+            # write file by using datetime now for writing time 
+            res_meta = data_node.writeListDataNode(
+                df=ddf, 
+                directory_id=folder_id, 
+                name=self._file_name, 
+                profiling=True, 
+                replace=True, 
+                lineage=lineage_list,
+                overwrite_same_date=overwrite_same_date, 
+                data_date=data_date,
+            )
+                        
+            logger.info('      2. Read File:     ')                        
+            # read latest file every time (overwrite same date if same date exist)
+            # write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[-1]['file_id']
+            if data_date:
+                index, result_list = data_node.get_file_from_date(file_id=res_meta['file_id'], data_date=data_date)                                    
+                write_file_id = result_list[index]['file_id']
+            else:
+                write_file_id = data_node.get_file_version(file_id=res_meta['file_id'])[-1]['file_id']
+                            
+            ddf = data_node.read_ddf(file_id=write_file_id) 
+                
             ddf_read = data_node.read_ddf(file_id=write_file_id)            
             time.sleep(2) # wait for file finish writing
             before_validate_stat = self.calculate_statistic_log(ddf_read)
