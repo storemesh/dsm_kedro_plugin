@@ -26,7 +26,7 @@ import dask
 import shutil
 from pathlib import Path
 
-from src.dsm_kedro_plugin.custom_dataset.utils import validate_etl_date
+from src.dsm_kedro_plugin.custom_dataset.utils import validate_etl_date, remove_file_or_folder
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE, ETL_MODE
 
@@ -352,11 +352,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 file_id=res_meta['file_id']
             )  
 
-            # delete temp file
-            if os.path.isdir(save_file_name): 
-                shutil.rmtree(save_file_name)
-            else:
-                os.remove(save_file_name)          
+            remove_file_or_folder(save_file_name)                      
 
 
     def _describe(self) -> Dict[str, Any]:
@@ -586,6 +582,8 @@ class DsmReadCSVNode(DsmDataNode):
         _replace = self._config.get('replace', False)
         data_node.upload_file(directory_id=_folder_id, file_path=save_path, description="", lineage=lineage_list, replace=_replace)
 
+        remove_file_or_folder(save_path)   
+        
     def _describe(self) -> Dict[str, Any]:
         pass
 
@@ -640,5 +638,7 @@ class DsmJSONFile(DsmDataNode):
         folder_id = self._get_folder_id(data_node)
         data_node.upload_file(directory_id=folder_id, file_path=save_path, description=f"data of {self._file_name}", lineage=lineage_list, replace=True)
 
+        remove_file_or_folder(save_path)   
+        
     def _describe(self) -> Dict[str, Any]:
         pass
