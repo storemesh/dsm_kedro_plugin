@@ -26,7 +26,7 @@ import dask
 import shutil
 from pathlib import Path
 
-from .utils import validate_etl_date
+from src.dsm_kedro_plugin.custom_dataset.utils import validate_etl_date
 from src.dsm_kedro_plugin.custom_dataset.validation.validation_schema import validate_data, ValidationException
 from src.config.project_setting import DATAPLATFORM_API_URI, OBJECT_STORAGE_URI, PROJECT_FOLDER_ID, OBJECT_STORAGE_SECUE, ETL_MODE
 
@@ -283,16 +283,18 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
         # check save mode (initial or append)
         if ETL_MODE:
             etl_config = ETL_MODE['DsmDataNode']['write']
-            if etl_config['auto_partition'] and ('partition_on' not in self._write_extra_param):
-                # add new column for partitioning (only catalog that provide partition_on param in _write_extra_param)
-                etl_date = kedro_context.params.get('etl_date', None) #catalog.load('params:etl_date')
-                validate_etl_date(etl_date)
-                ddf['_retrieve_date'] = etl_date
-                self._write_extra_param['partition_on'] = '_retrieve_date'         
+            if etl_config['auto_partition'] and \
+                (self._project_folder_name in etl_config['append_folder']) and \
+                ('partition_on' not in self._write_extra_param):
+                    # add new column for partitioning (only catalog that provide partition_on param in _write_extra_param)
+                    etl_date = kedro_context.params.get('etl_date', None) #catalog.load('params:etl_date')
+                    validate_etl_date(etl_date)
+                    ddf['_retrieve_date'] = etl_date
+                    self._write_extra_param['partition_on'] = '_retrieve_date'         
                     
             if (etl_config['mode'] == 'append') and \
                 (self._project_folder_name in etl_config['append_folder']) and \
-                 ('append' not in self._write_extra_param):
+                ('append' not in self._write_extra_param):
                     self._write_extra_param['append'] = True 
         
         data_node = self._get_data_node()
