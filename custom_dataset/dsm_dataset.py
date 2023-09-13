@@ -425,6 +425,7 @@ class DsmListDataNode(DsmDataNode):
         
         overwrite_same_date = False
         write_from_date = None
+        data_date = None
         
         if ETL_MODE and ETL_MODE['DsmListDataNode']:
             etl_config_write = ETL_MODE['DsmListDataNode']['write']
