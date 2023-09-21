@@ -160,8 +160,12 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     def _get_folder_id(self, datanode):
         if self._folder_id:
             folder_id = self._folder_id
-        elif self._project_folder_name :            
-            folder_id = datanode.get_directory_id(parent_dir_id=PROJECT_FOLDER_ID, name=self._project_folder_name)
+        elif self._project_folder_name:    
+            folder_name_list = self._project_folder_name.split('/')
+            folder_id = PROJECT_FOLDER_ID
+            for folder_name in folder_name_list:      
+                folder_id = datanode.get_directory_id(parent_dir_id=folder_id, name=folder_name)
+                
         else:
             raise Exception("'folder_id' and 'project_folder_name' are None. One of this should be given")
         return folder_id
