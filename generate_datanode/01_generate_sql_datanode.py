@@ -18,7 +18,7 @@ sql_datanode_folder_name = "SQLDataNode"
 
 if __name__ == "__main__":    
     if not os.path.exists(GENERATE_CATALOG_PATH):
-        os.makedirs(generate_catalog_path, exist_ok=True)
+        os.makedirs(GENERATE_CATALOG_PATH, exist_ok=True)
 
     generate_sql_datanode(
         source_table=source_table, 

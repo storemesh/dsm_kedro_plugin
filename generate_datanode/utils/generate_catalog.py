@@ -55,11 +55,13 @@ def generate_sql_datanode(
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
     
     node_list = []
-    for database_id, table_list in source_table.items():
-        print(f'--- dabase id: {database_id} ----- ')
+    for database_id_or_name, table_list in source_table.items():
+        print(f'--- dabase : {database_id_or_name} ----- ')
         
-        # exec to define class object                 
-        database_meta, schema = database.get_database_schema(database_id=database_id)
+        # exec to define class object
+        kwargs = {'database_id': database_id_or_name} if type(database_id_or_name) == int else {'database_name': database_id_or_name}
+        database_meta, schema = database.get_database_schema(**kwargs)
+        _database_id = database_meta.get('id')
         exec(schema, globals())
 
         database_name = database_meta['name']
@@ -87,7 +89,7 @@ def query():
             database.write_sql_query(
                 query_function=query_template,
                 directory_id=sql_datanode_folder_id, 
-                database_id=database_id, 
+                database_id=_database_id, 
                 pk_column=pk_column, 
                 name=file_name, 
                 meta=meta,
@@ -156,14 +158,16 @@ def generate_landing_pipeline(
     sql_datanode_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=sql_datanode_folder_name)
     landing_folder_id = data_node.get_directory_id(parent_dir_id=project_folder_id, name=landing_folder_name)
     
-    for database_id, table_list in source_table.items():
-        database_meta, schema = database.get_database_schema(database_id=database_id)
+    for database_id_or_name, table_list in source_table.items():
+        
+        kwargs = {'database_id': database_id_or_name} if type(database_id_or_name) == int else {'database_name': database_id_or_name}
+        database_meta, schema = database.get_database_schema(**kwargs)
         database_name = database_meta['name']
         database_name = database_name.replace(' ', '_')
         for table_name in table_list:     
             check_generate_file = True     
             if generate_source_dict != None:
-                if (not database_id in generate_source_dict) or (not table_name in generate_source_dict[database_id]):
+                if (not database_id_or_name in generate_source_dict) or (not table_name in generate_source_dict[database_id_or_name]):
                     check_generate_file = False
             
             _, show_table_name = get_table_display_name(table_name)
