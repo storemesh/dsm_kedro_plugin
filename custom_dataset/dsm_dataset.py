@@ -38,13 +38,22 @@ logging.basicConfig(
 logger = logging.getLogger('kedro')
 logger.setLevel(logging.INFO)               
 
-# load kedro context
-project_path = Path.cwd()
-bootstrap_project(project_path)
 
-session = KedroSession.create(project_path)
-kedro_context = session.load_context()
+class DummyContext:
+    def __init__(self):
+        self.params = {
+            'etl_date': datetime.datetime.now().strftime('%Y-%m-%d')
+        }
+        
+kedro_context = DummyContext()
 
+if os.environ.get('DSM_KEDRO_AIRFLOW') == None:
+    # load kedro context
+    project_path = Path.cwd()
+    bootstrap_project(project_path)
+
+    session = KedroSession.create(project_path)
+    kedro_context = session.load_context()
 
 class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     """``DsmDataNode`` loads/saves data from/to Data Platform.
