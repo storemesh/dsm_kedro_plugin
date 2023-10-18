@@ -419,7 +419,9 @@ class DsmListDataNode(DsmDataNode):
             else:
                 write_file_id = data_node.get_file_version(file_id=file_id)[-1]['file_id']
                             
-            ddf = data_node.read_ddf(file_id=write_file_id) 
+            ddf = data_node.read_ddf(file_id=write_file_id)
+            print(f"\twrite_file_id=> {write_file_id}")
+        print(f"\tnum rows : {len(ddf)}")
         
         # load metadata        
         f_meta = data_node.get_meta_file(file_id=file_id)     
