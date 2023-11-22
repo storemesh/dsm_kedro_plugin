@@ -39,12 +39,13 @@ logger = logging.getLogger('kedro')
 logger.setLevel(logging.INFO)               
 
 # load kedro context
-project_path = Path.cwd()
-bootstrap_project(project_path)
+# project_path = Path.cwd()
+# bootstrap_project(project_path)
 
-session = KedroSession.create(project_path)
-kedro_context = session.load_context()
+# session = KedroSession.create(project_path)
+# kedro_context = session.load_context()
 
+default_etl_date = '2023-08-05'
 
 class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
     """``DsmDataNode`` loads/saves data from/to Data Platform.
@@ -287,7 +288,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 (self._project_folder_name in etl_config['append_folder']) and \
                 ('partition_on' not in self._write_extra_param):
                     # add new column for partitioning (only catalog that provide partition_on param in _write_extra_param)
-                    etl_date = kedro_context.params.get('etl_date', None) #catalog.load('params:etl_date')
+                    etl_date = default_etl_date #kedro_context.params.get('etl_date', default_etl_date) #catalog.load('params:etl_date')
                     validate_etl_date(etl_date)
                     ddf['_retrieve_date'] = etl_date
                     self._write_extra_param['partition_on'] = '_retrieve_date'         
@@ -388,7 +389,7 @@ class DsmListDataNode(DsmDataNode):
         if ETL_MODE and ETL_MODE['DsmListDataNode']:
             etl_config_read = ETL_MODE['DsmListDataNode']['read']
             if etl_config_read['mode'] == 'from_date':
-                etl_date = kedro_context.params.get('etl_date', None)
+                etl_date = default_etl_date #kedro_context.params.get('etl_date', None)
                 data_date = validate_etl_date(etl_date)
             
             if (self._project_folder_name in etl_config_read['list_datanode_folder']) and \
@@ -425,13 +426,14 @@ class DsmListDataNode(DsmDataNode):
         
         overwrite_same_date = False
         write_from_date = None
+        data_date = None 
         
         if ETL_MODE and ETL_MODE['DsmListDataNode']:
             etl_config_write = ETL_MODE['DsmListDataNode']['write']
             overwrite_same_date = etl_config_write['overwrite_same_date']
             
             if etl_config_write['mode'] == 'from_date':
-                etl_date = kedro_context.params.get('etl_date', None)
+                etl_date = default_etl_date # kedro_context.params.get('etl_date', None)
                 data_date = validate_etl_date(etl_date)                        
 
         with ProgressBar():
