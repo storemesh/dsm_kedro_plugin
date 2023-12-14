@@ -308,7 +308,9 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             if (etl_config['mode'] == 'append') and \
                 (self._project_folder_name in etl_config['append_folder']) and \
                 ('append' not in self._write_extra_param):
-                    self._write_extra_param['append'] = True 
+                    self._write_extra_param['append'] = True
+            else:
+                self._write_extra_param['append'] = False
         
         data_node = self._get_data_node()
         self._folder_id = self._get_folder_id(data_node)
