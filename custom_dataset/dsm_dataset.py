@@ -339,7 +339,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                     df=ddf_validated, 
                     directory=self._folder_id, 
                     name=self._file_name, 
-                    profiling=True, 
+                    datadict=True,
+                    profiling=False, 
                     replace=True, 
                     lineage=lineage_list, 
                     **self._write_extra_param
@@ -357,7 +358,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 
             else:
                 # no validate, save data directly to data platform
-                res_meta = data_node.write(df=ddf_tmp, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list, **self._write_extra_param)
+                res_meta = data_node.write(df=ddf_tmp, directory=self._folder_id, name=self._file_name, datadict=True, profiling=False, replace=True, lineage=lineage_list, **self._write_extra_param)
                 after_validate_stat = before_validate_stat
                 ddf = ddf_tmp
                 
@@ -461,7 +462,8 @@ class DsmListDataNode(DsmDataNode):
                 df=ddf, 
                 directory_id=folder_id, 
                 name=self._file_name, 
-                profiling=True, 
+                datadict=True,
+                profiling=False, 
                 replace=True, 
                 lineage=lineage_list,
                 overwrite_same_date=overwrite_same_date, 
@@ -520,7 +522,8 @@ class DsmDataNodeAppend(DsmDataNode):
             df=ddf, 
             directory=self._folder_id, 
             name=self._file_name, 
-            profiling=True, 
+            datadict=True,
+            profiling=False, 
             replace=True,
             lineage=lineage_list,
 
