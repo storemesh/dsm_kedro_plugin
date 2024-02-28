@@ -308,7 +308,9 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
             if (etl_config['mode'] == 'append') and \
                 (self._project_folder_name in etl_config['append_folder']) and \
                 ('append' not in self._write_extra_param):
-                    self._write_extra_param['append'] = True 
+                    self._write_extra_param['append'] = True
+            else:
+                self._write_extra_param['append'] = False
         
         data_node = self._get_data_node()
         self._folder_id = self._get_folder_id(data_node)
@@ -337,7 +339,8 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                     df=ddf_validated, 
                     directory=self._folder_id, 
                     name=self._file_name, 
-                    profiling=True, 
+                    datadict=True,
+                    profiling=False, 
                     replace=True, 
                     lineage=lineage_list, 
                     **self._write_extra_param
@@ -355,7 +358,7 @@ class DsmDataNode(AbstractDataSet[dd.DataFrame, dd.DataFrame]):
                 
             else:
                 # no validate, save data directly to data platform
-                res_meta = data_node.write(df=ddf_tmp, directory=self._folder_id, name=self._file_name, profiling=True, replace=True, lineage=lineage_list, **self._write_extra_param)
+                res_meta = data_node.write(df=ddf_tmp, directory=self._folder_id, name=self._file_name, datadict=True, profiling=False, replace=True, lineage=lineage_list, **self._write_extra_param)
                 after_validate_stat = before_validate_stat
                 ddf = ddf_tmp
                 
@@ -463,7 +466,8 @@ class DsmListDataNode(DsmDataNode):
                 df=ddf, 
                 directory_id=folder_id, 
                 name=self._file_name, 
-                profiling=True, 
+                datadict=True,
+                profiling=False, 
                 replace=True, 
                 lineage=lineage_list,
                 overwrite_same_date=overwrite_same_date, 
@@ -522,7 +526,8 @@ class DsmDataNodeAppend(DsmDataNode):
             df=ddf, 
             directory=self._folder_id, 
             name=self._file_name, 
-            profiling=True, 
+            datadict=True,
+            profiling=False, 
             replace=True,
             lineage=lineage_list,
 
