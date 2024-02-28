@@ -432,7 +432,11 @@ class DsmListDataNode(DsmDataNode):
         return (ddf, self.meta)
     
     def _save(self, data: Tuple[dd.DataFrame, List[int]]) -> None:
-        ddf, meta_list = data
+        _etl_date = None
+        if len(data) == 3:
+            ddf, meta_list, _etl_date = data
+        else:
+            ddf, meta_list = data
         lineage_list = [ item['file_id'] for item in meta_list]
 
         data_node = self._get_data_node()
@@ -447,7 +451,7 @@ class DsmListDataNode(DsmDataNode):
             overwrite_same_date = etl_config_write['overwrite_same_date']
             
             if etl_config_write['mode'] == 'from_date':
-                etl_date = kedro_context.params.get('etl_date', None)
+                etl_date = _etl_date or kedro_context.params.get('etl_date', None)
                 data_date = validate_etl_date(etl_date)                        
 
         with ProgressBar():
